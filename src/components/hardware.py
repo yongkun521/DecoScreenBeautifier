@@ -30,9 +30,9 @@ class HardwareMonitor(BaseWidget):
         self.memory_percent = psutil.virtual_memory().percent
         
         # 构建显示内容
-        self.update(self._render_content())
+        self.update(self._build_content())
 
-    def _render_content(self):
+    def _build_content(self):
         """渲染组件内容"""
         # CPU 进度条
         cpu_bar = self._make_bar(self.cpu_percent, "CPU", "red" if self.cpu_percent > 80 else "green")

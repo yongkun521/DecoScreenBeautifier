@@ -28,13 +28,13 @@ class ClockWidget(BaseWidget):
         date_str = now.strftime("%Y-%m-%d")
         
         # 构建显示内容
-        self.update(self._render_content(time_str, date_str))
+        self.update(self._build_content(time_str, date_str))
 
-    def _render_content(self, time_str, date_str):
+    def _build_content(self, time_str, date_str):
         """渲染组件内容"""
         # 使用大字体显示时间 (这里暂时用普通文本，后续可集成 ASCII 艺术字体)
         time_text = Text(time_str, style="bold magenta", justify="center")
-        time_text.font_size = 3  # Textual 不直接支持 font_size，这只是占位，实际需要 ASCII 字体库
+        # time_text.font_size = 3  # Textual 不直接支持 font_size，这只是占位，实际需要 ASCII 字体库
         
         # 日期显示
         date_text = Text(date_str, style="cyan", justify="center")

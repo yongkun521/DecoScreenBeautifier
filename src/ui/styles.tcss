@@ -43,14 +43,12 @@ Placeholder {
 #p_hardware {
     column-span: 2;
     row-span: 1;
-    border-title: "SYSTEM STATUS";
     border-title-color: #00FF41;
 }
 
 #p_clock {
     column-span: 2;
     row-span: 1;
-    border-title: "CHRONO";
     border-title-color: #FF00FF;
     border: heavy #FF00FF;
 }
@@ -58,7 +56,6 @@ Placeholder {
 #p_audio {
     column-span: 4;
     row-span: 1;
-    border-title: "AUDIO VISUALIZER";
     border-title-color: #00FFFF;
     border: heavy #00FFFF;
 }
