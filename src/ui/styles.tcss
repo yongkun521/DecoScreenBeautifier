@@ -254,11 +254,17 @@ Screen.layout-strip #p_image { column-span: 12; row-span: 1; }
     padding: 1;
 }
 
+#toolbox_list {
+    height: 1fr;
+    border: solid #444;
+    padding: 0 1;
+}
+
 #editor_canvas {
     width: 60%;
     height: 100%;
     border: dashed #999;
-    align: center middle;
+    padding: 1;
 }
 
 #properties {
@@ -275,10 +281,37 @@ Screen.layout-strip #p_image { column-span: 12; row-span: 1; }
     padding: 1;
 }
 
-#prop_section {
+.prop_section {
     text-align: left;
     text-style: bold;
     padding: 1 0;
+}
+
+.prop_label {
+    padding: 0 1;
+}
+
+#canvas_title {
+    text-style: bold;
+    padding: 0 1;
+}
+
+#canvas_components_title {
+    text-style: bold;
+    padding: 1 1 0 1;
+}
+
+#canvas_grid {
+    height: 12;
+    border: solid #666;
+    padding: 1;
+    margin-bottom: 1;
+}
+
+#component_list {
+    height: 1fr;
+    border: solid #444;
+    padding: 0 1;
 }
 
 /* 模板选择界面 */
