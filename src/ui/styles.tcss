@@ -310,7 +310,7 @@ Screen.layout-strip #p_image { column-span: 12; row-span: 1; }
     grid-size: 2 1;
     grid-columns: 1fr 1fr;
     margin-top: 1;
-    column-gap: 2;
+    grid-gutter: 2;
 }
 
 /* ========================================================================== */

@@ -79,6 +79,7 @@
     - [x] 设计 3-5 套内置全局模板 (如 "Cyberpunk 2077", "Retro Terminal", "Minimalist")
     - [x] 实现模板选择与一键应用功能
     - [x] 修复模板 ID 生成的 BadIdentifier 错误
+    - [x] 修复模板选择界面网格列间距 CSS 解析错误（column-gap -> grid-gutter）
 - [x] **全局设置**
     - [x] 字符集选择 (ASCII / Block Characters / Braille)
     - [x] 刷新率控制 (FPS Limit)
