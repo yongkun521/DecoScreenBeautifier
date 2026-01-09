@@ -1,0 +1,105 @@
+/* src/ui/styles.tcss */
+
+/* 全局屏幕样式 */
+Screen {
+    background: #0D0208;  /* 深黑色背景 */
+    color: #00FF41;       /* 赛博朋克绿 */
+}
+
+/* 头部样式 */
+Header {
+    dock: top;
+    height: 1;
+    background: #1a1a1a;
+    color: #FF00FF;       /* 霓虹粉 */
+    text-style: bold;
+}
+
+/* 底部样式 */
+Footer {
+    dock: bottom;
+    height: 1;
+    background: #1a1a1a;
+    color: #00FFFF;       /* 霓虹蓝 */
+}
+
+/* 主网格布局 */
+#main_grid {
+    layout: grid;
+    grid-size: 4 2;       /* 4列 2行 */
+    grid-columns: 1fr 1fr 1fr 1fr;
+    grid-rows: 2fr 1fr;
+    grid-gutter: 1;       /* 间距 */
+    padding: 1;
+}
+
+/* 占位符样式 (后续组件通用样式) */
+Placeholder {
+    height: 100%;
+    border: heavy #00FF41; /* 粗边框 */
+    background: #001a05;
+}
+
+#p_hardware {
+    column-span: 2;
+    row-span: 1;
+    border-title: "SYSTEM STATUS";
+    border-title-color: #00FF41;
+}
+
+#p_clock {
+    column-span: 2;
+    row-span: 1;
+    border-title: "CHRONO";
+    border-title-color: #FF00FF;
+    border: heavy #FF00FF;
+}
+
+#p_audio {
+    column-span: 4;
+    row-span: 1;
+    border-title: "AUDIO VISUALIZER";
+    border-title-color: #00FFFF;
+    border: heavy #00FFFF;
+}
+
+/* 编辑器样式 */
+#editor_layout {
+    height: 100%;
+    width: 100%;
+}
+
+#toolbox {
+    width: 20%;
+    height: 100%;
+    border-right: solid $primary;
+    background: #1a1a1a;
+}
+
+#toolbox_title {
+    text-align: center;
+    background: $primary;
+    color: black;
+    padding: 1;
+}
+
+#editor_canvas {
+    width: 60%;
+    height: 100%;
+    border: dashed #444;
+    align: center middle;
+}
+
+#properties {
+    width: 20%;
+    height: 100%;
+    border-left: solid $primary;
+    background: #1a1a1a;
+}
+
+#prop_title {
+    text-align: center;
+    background: $secondary;
+    color: black;
+    padding: 1;
+}

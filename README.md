@@ -1,57 +1,66 @@
-# React + TypeScript + Vite
+# DecoScreenBeautifier
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**DecoScreenBeautifier** 是一款专为电脑桌搭和机箱副屏设计的 CLI 风格美化软件，采用赛博朋克和复古未来主义设计语言。
 
-Currently, two official plugins are available:
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Python](https://img.shields.io/badge/python-3.9+-yellow.svg)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ 核心特性
 
-## Expanding the ESLint configuration
+- **💻 赛博朋克 CLI 界面**：纯命令行界面，复古与未来的完美结合。
+- **📊 实时硬件监控**：CPU、内存使用率实时可视化。
+- **🎵 音频可视化**：支持频谱动态显示（需音频输入设备）。
+- **🖼️ 字符画转换**：自动将图片转换为 ASCII/ANSI 字符画。
+- **🎨 丰富的主题与模板**：内置赛博朋克风格，支持自定义布局。
+- **🛠️ 可视化编辑器**：内置布局编辑器，支持组件管理。
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚀 快速开始
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+### 运行源码
+
+1. 克隆仓库：
+   ```bash
+   git clone https://github.com/yourusername/DecoScreenBeautifier.git
+   cd DecoScreenBeautifier
+   ```
+
+2. 安装依赖：
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. 运行程序：
+   ```bash
+   python src/main.py
+   ```
+
+### 快捷键指南
+
+| 按键 | 功能 |
+| --- | --- |
+| `d` | 切换 明亮/暗黑 模式 |
+| `e` | 打开 **布局编辑器** |
+| `t` | 打开 **模板选择器** |
+| `q` | 退出程序 |
+
+## 🛠️ 自定义配置
+
+配置文件位于用户数据目录中（Windows 下通常为 `AppData\Local\DecoTeam\DecoScreenBeautifier`）。
+
+- **settings.json5**: 全局设置（FPS、主题等）。
+- **layouts/**: 存放自定义布局文件。
+
+## 📦 构建发行版
+
+使用 PyInstaller 打包为独立 EXE：
+
+```bash
+pip install pyinstaller
+pyinstaller DecoScreenBeautifier.spec
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+构建完成后，可执行文件位于 `dist/DecoScreenBeautifier/DecoScreenBeautifier.exe`。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 📄 许可证
 
-export default tseslint.config({
-  extends: [
-    // other configs...
-    // Enable lint rules for React
-    reactX.configs['recommended-typescript'],
-    // Enable lint rules for React DOM
-    reactDom.configs.recommended,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+本项目采用 MIT 许可证。详见 LICENSE 文件。
