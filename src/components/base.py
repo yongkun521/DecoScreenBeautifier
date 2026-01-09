@@ -1,6 +1,8 @@
 from textual.widgets import Static
 from textual.reactive import reactive
 from textual.message import Message
+from rich.text import Text
+import random
 
 class BaseWidget(Static):
     """
@@ -10,16 +12,17 @@ class BaseWidget(Static):
 
     DEFAULT_CSS = """
     BaseWidget {
-        background: $surface;
-        color: $text;
-        border: heavy $primary;
+        background: transparent;
+        color: #00FF41;
+        border: heavy #00FF41;
         padding: 0 1;
+        margin: 1;
     }
     """
 
     def __init__(self, title: str = "", update_interval: float = 1.0, **kwargs):
         super().__init__(**kwargs)
-        self.border_title = title
+        self.border_title = f" [ {title} ] "
         self._update_interval = update_interval
         self._timer = None
 
@@ -35,6 +38,17 @@ class BaseWidget(Static):
         子类必须实现此方法以更新显示内容
         """
         pass
+
+    def glitch_text(self, text: str, probability: float = 0.05) -> Text:
+        """为文本添加随机故障效果"""
+        glitch_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+        result = Text()
+        for char in text:
+            if char != " " and random.random() < probability:
+                result.append(random.choice(glitch_chars), style="blink bold magenta")
+            else:
+                result.append(char)
+        return result
 
     def set_update_interval(self, interval: float) -> None:
         """动态调整更新频率"""

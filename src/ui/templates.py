@@ -24,9 +24,15 @@ class TemplateScreen(Screen):
             layouts = self.config_manager.list_layouts()
             if not layouts:
                 layouts = ["Default (Built-in)"]
-                
+            
+            items = []
+            for layout in layouts:
+                # Sanitize id: replace non-alphanumeric with underscore
+                safe_id = "".join(c if c.isalnum() or c in "-_" else "_" for c in layout)
+                items.append(ListItem(Label(layout), id=f"tpl_{safe_id}"))
+
             yield ListView(
-                *[ListItem(Label(layout), id=f"tpl_{layout}") for layout in layouts],
+                *items,
                 id="template_list"
             )
             

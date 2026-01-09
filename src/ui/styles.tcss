@@ -9,10 +9,11 @@ Screen {
 /* 头部样式 */
 Header {
     dock: top;
-    height: 1;
+    height: 3;
     background: #1a1a1a;
     color: #FF00FF;       /* 霓虹粉 */
     text-style: bold;
+    border-bottom: double #FF00FF;
 }
 
 /* 底部样式 */
@@ -26,38 +27,42 @@ Footer {
 /* 主网格布局 */
 #main_grid {
     layout: grid;
-    grid-size: 4 2;       /* 4列 2行 */
-    grid-columns: 1fr 1fr 1fr 1fr;
-    grid-rows: 2fr 1fr;
+    grid-size: 6 4;       /* 6列 4行 */
+    grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr 1fr 1fr;
     grid-gutter: 1;       /* 间距 */
     padding: 1;
 }
 
-/* 占位符样式 (后续组件通用样式) */
-Placeholder {
-    height: 100%;
-    border: heavy #00FF41; /* 粗边框 */
-    background: #001a05;
+/* 组件样式覆盖 */
+#p_hardware {
+    column-span: 3;
+    row-span: 2;
+    border: heavy #00FF41;
 }
 
-#p_hardware {
-    column-span: 2;
+#p_network {
+    column-span: 3;
     row-span: 1;
-    border-title-color: #00FF41;
+    border: heavy #00FFFF;
 }
 
 #p_clock {
-    column-span: 2;
+    column-span: 3;
     row-span: 1;
-    border-title-color: #FF00FF;
     border: heavy #FF00FF;
 }
 
 #p_audio {
-    column-span: 4;
+    column-span: 6; 
     row-span: 1;
-    border-title-color: #00FFFF;
-    border: heavy #00FFFF;
+    border: heavy #FFD700;
+}
+
+#p_image {
+    column-span: 6;
+    row-span: 1;
+    border: heavy #00FF41;
 }
 
 /* 编辑器样式 */
@@ -69,13 +74,13 @@ Placeholder {
 #toolbox {
     width: 20%;
     height: 100%;
-    border-right: solid $primary;
-    background: #1a1a1a;
+    border-right: solid #CCCCCC;
+    background: #FFFFFF;
 }
 
 #toolbox_title {
     text-align: center;
-    background: $primary;
+    background: #E0E0E0;
     color: black;
     padding: 1;
 }
@@ -83,20 +88,82 @@ Placeholder {
 #editor_canvas {
     width: 60%;
     height: 100%;
-    border: dashed #444;
+    border: dashed #999;
     align: center middle;
 }
 
 #properties {
     width: 20%;
     height: 100%;
-    border-left: solid $primary;
-    background: #1a1a1a;
+    border-left: solid #CCCCCC;
+    background: #FFFFFF;
 }
 
 #prop_title {
     text-align: center;
-    background: $secondary;
+    background: #E0E0E0;
     color: black;
     padding: 1;
+}
+
+/* ========================================================================== */
+/* DARK MODE (CYBERPUNK THEME)                                                */
+/* ========================================================================== */
+
+.-dark Screen {
+    background: #0D0208;  /* Deep Black */
+    color: #00FF41;       /* Cyberpunk Green */
+}
+
+.-dark Header {
+    background: #1a1a1a;
+    color: #FF00FF;       /* Neon Pink */
+}
+
+.-dark Footer {
+    background: #1a1a1a;
+    color: #00FFFF;       /* Neon Blue */
+}
+
+.-dark Placeholder {
+    border: heavy #00FF41;
+    background: #001a05;
+}
+
+.-dark #p_hardware {
+    border-title-color: #00FF41;
+}
+
+.-dark #p_clock {
+    border-title-color: #FF00FF;
+    border: heavy #FF00FF;
+}
+
+.-dark #p_audio {
+    border-title-color: #00FFFF;
+    border: heavy #00FFFF;
+}
+
+.-dark #toolbox {
+    border-right: solid $primary;
+    background: #1a1a1a;
+}
+
+.-dark #toolbox_title {
+    background: $primary;
+    color: black;
+}
+
+.-dark #editor_canvas {
+    border: dashed #444;
+}
+
+.-dark #properties {
+    border-left: solid $primary;
+    background: #1a1a1a;
+}
+
+.-dark #prop_title {
+    background: $secondary;
+    color: black;
 }

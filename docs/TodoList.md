@@ -23,19 +23,20 @@
     - [x] 定义 `BaseWidget` 类，统一更新机制、样式接口和生命周期管理
     - [x] 实现组件的边框渲染和标题显示
 - [x] **硬件监控组件 (Hardware Monitor)**
-    - [x] 集成 `psutil` 获取 CPU 使用率/频率
+    - [x] 集成 `psutil` 获取 CPU 使用率/频率 (支持多核显示)
     - [x] 集成 `psutil` 获取 内存/Swap 使用情况
-    - [x] (可选) 获取 GPU 信息 (需调研 `GPUtil` 或 `pynvml`)
-    - [x] 实现仪表盘 (Gauge) 和 迷你图 (Sparkline) 两种显示模式
+    - [x] 实现赛博风格进度条和 CPU 负载趋势图 (Sparkline)
+- [x] **网络监控组件 (Network Monitor)**
+    - [x] 实现实时上传/下载带宽监控
+    - [x] 动态箭头指示数据流向
+    - [x] 修复网络监控渲染错误（表格与文本组合）
 - [x] **时钟与时间组件 (Clock & Time)**
     - [x] 实现数字时钟 (Digital Clock)
-    - [x] 实现复古翻页钟效果 (Retro Flip Clock 模拟)
-    - [x] 实现日期和天气概览组件 (需集成免费天气 API)
+    - [x] 增加日期、星期显示及随机故障特效 (Glitch Effect)
 - [x] **音频可视化组件 (Audio Visualizer)**
     - [x] 集成 `pyaudio` 捕获系统音频输出
-    - [x] 使用 `numpy` 进行 FFT (快速傅里叶变换) 计算频谱
-    - [x] 实现频谱柱状图 (Bar Chart) 动态渲染
-    - [x] 优化音频处理性能，避免阻塞 UI 线程
+    - [x] 使用 `numpy` 进行 FFT 计算频谱，增加对数缩放
+    - [x] 实现对称式频谱柱状图，支持颜色渐变和动态平滑
 
 ## 🎨 第三阶段：视觉特效引擎 (Phase 3: Visual Engine)
 > 目标：实现 CLI 风格独特的视觉效果，包括图片转字符画和故障艺术效果。
@@ -77,6 +78,7 @@
 - [x] **模板系统 (Template System)**
     - [x] 设计 3-5 套内置全局模板 (如 "Cyberpunk 2077", "Retro Terminal", "Minimalist")
     - [x] 实现模板选择与一键应用功能
+    - [x] 修复模板 ID 生成的 BadIdentifier 错误
 - [x] **全局设置**
     - [x] 字符集选择 (ASCII / Block Characters / Braille)
     - [x] 刷新率控制 (FPS Limit)
@@ -90,6 +92,7 @@
     - [ ] 内存泄漏检测与修复
 - [ ] **系统集成**
     - [x] Windows 开机自启动功能 (Registry / Startup Folder)
+    - [x] 启动时依赖检查与缺失提示
     - [ ] 系统托盘图标 (System Tray) 支持 (最小化/退出/切换配置)
 - [ ] **文档与构建**
     - [ ] 编写用户使用手册

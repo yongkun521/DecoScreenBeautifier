@@ -8,6 +8,7 @@ from components.hardware import HardwareMonitor
 from components.clock import ClockWidget
 from components.audio import AudioVisualizer
 from components.image import ImageWidget
+from components.network import NetworkMonitor
 
 class DisplayScreen(Screen):
     """主显示界面，用于展示各种 CLI 组件"""
@@ -21,14 +22,16 @@ class DisplayScreen(Screen):
             # 硬件监控组件
             yield HardwareMonitor(id="p_hardware")
             
+            # 网络监控组件
+            yield NetworkMonitor(id="p_network")
+            
             # 时钟组件
             yield ClockWidget(id="p_clock")
             
             # 音频可视化组件
             yield AudioVisualizer(id="p_audio")
             
-            # 图像组件 (这里没有默认图片，会显示提示)
-            # 用户可以通过后续的编辑器加载图片
+            # 图像组件
             yield ImageWidget(id="p_image", image_path="assets/logo.png")
             
         yield Footer()
