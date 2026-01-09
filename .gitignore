@@ -28,3 +28,10 @@ release
 # Trae
 .trae/*
 !.trae/documents/
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
