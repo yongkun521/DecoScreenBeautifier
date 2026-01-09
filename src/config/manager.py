@@ -3,6 +3,14 @@ import json5
 import appdirs
 from pathlib import Path
 
+from core.presets import (
+    DEFAULT_FONT_PRESET_ID,
+    DEFAULT_TEMPLATE_ID,
+    get_font_preset,
+    get_template,
+    list_templates,
+)
+
 class ConfigManager:
     """
     配置管理器
@@ -27,9 +35,12 @@ class ConfigManager:
         self.settings = {
             "fps_limit": 30,
             "theme": "cyberpunk",
-            "startup_enabled": False
+            "startup_enabled": False,
+            "template_id": DEFAULT_TEMPLATE_ID,
+            "font_preset": DEFAULT_FONT_PRESET_ID,
+            "global_scale": 1.0,
         }
-        self.current_layout = "default"
+        self.current_template = self.settings["template_id"]
 
     def _ensure_dirs(self):
         """创建必要的目录"""
@@ -49,6 +60,11 @@ class ConfigManager:
                 print(f"Failed to load settings: {e}")
         else:
             self.save_settings()
+        # 补全缺失项，兼容旧版本设置
+        self.settings.setdefault("template_id", DEFAULT_TEMPLATE_ID)
+        self.settings.setdefault("font_preset", DEFAULT_FONT_PRESET_ID)
+        self.settings.setdefault("global_scale", 1.0)
+        self.current_template = self.settings.get("template_id", DEFAULT_TEMPLATE_ID)
 
     def save_settings(self):
         """保存全局设置"""
@@ -58,6 +74,34 @@ class ConfigManager:
                 json5.dump(self.settings, f, indent=4)
         except Exception as e:
             print(f"Failed to save settings: {e}")
+
+    def list_templates(self) -> list:
+        """列出所有内置模板"""
+        return list_templates()
+
+    def get_template(self, template_id: str):
+        """获取模板详情"""
+        return get_template(template_id)
+
+    def get_active_template(self):
+        """返回当前激活模板"""
+        return get_template(self.settings.get("template_id")) or get_template(DEFAULT_TEMPLATE_ID)
+
+    def apply_template(self, template_id: str):
+        """应用模板并更新设置"""
+        template = get_template(template_id) or get_template(DEFAULT_TEMPLATE_ID)
+        if not template:
+            return None
+        self.settings["template_id"] = template["id"]
+        self.settings["theme"] = template.get("theme_class", "cyberpunk")
+        self.settings["font_preset"] = template.get("font_preset", DEFAULT_FONT_PRESET_ID)
+        self.settings["global_scale"] = template.get("global_scale", 1.0)
+        self.current_template = template["id"]
+        self.save_settings()
+        return template
+
+    def get_font_preset(self, preset_id: str):
+        return get_font_preset(preset_id)
 
     def load_layout(self, layout_name: str) -> dict:
         """加载指定布局"""

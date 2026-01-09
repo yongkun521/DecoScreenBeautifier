@@ -6,6 +6,27 @@ Screen {
     color: #00FF41;       /* 赛博朋克绿 */
 }
 
+/* 主题模板 */
+Screen.theme-neon {
+    background: #0D0208;
+    color: #00FF41;
+}
+
+Screen.theme-amber {
+    background: #1B1200;
+    color: #FFB000;
+}
+
+Screen.theme-ice {
+    background: #031B2B;
+    color: #5EE7FF;
+}
+
+Screen.theme-mono {
+    background: #0E0E0E;
+    color: #D0D0D0;
+}
+
 /* 头部样式 */
 Header {
     dock: top;
@@ -24,10 +45,54 @@ Footer {
     color: #00FFFF;       /* 霓虹蓝 */
 }
 
+Screen.theme-neon Header {
+    background: #1a1a1a;
+    color: #FF00FF;
+    border-bottom: double #FF00FF;
+}
+
+Screen.theme-amber Header {
+    background: #2A1700;
+    color: #FFB000;
+    border-bottom: solid #FFB000;
+}
+
+Screen.theme-ice Header {
+    background: #08263D;
+    color: #5EE7FF;
+    border-bottom: solid #5EE7FF;
+}
+
+Screen.theme-mono Header {
+    background: #1A1A1A;
+    color: #D0D0D0;
+    border-bottom: solid #666666;
+}
+
+Screen.theme-neon Footer {
+    background: #1a1a1a;
+    color: #00FFFF;
+}
+
+Screen.theme-amber Footer {
+    background: #2A1700;
+    color: #FFB000;
+}
+
+Screen.theme-ice Footer {
+    background: #08263D;
+    color: #5EE7FF;
+}
+
+Screen.theme-mono Footer {
+    background: #1A1A1A;
+    color: #D0D0D0;
+}
+
 /* 主网格布局 */
 #main_grid {
     layout: grid;
-    grid-size: 6 4;       /* 6列 4行 */
+    grid-size: 6 4;
     grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
     grid-rows: 1fr 1fr 1fr 1fr;
     grid-gutter: 1;       /* 间距 */
@@ -63,6 +128,110 @@ Footer {
     column-span: 6;
     row-span: 1;
     border: heavy #00FF41;
+}
+
+/* 布局模板：不同屏幕比例 */
+Screen.layout-ultrawide #main_grid {
+    grid-size: 12 3;
+    grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr 1fr;
+}
+
+Screen.layout-wide #main_grid {
+    grid-size: 8 4;
+    grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr 1fr 1fr;
+}
+
+Screen.layout-portrait #main_grid {
+    grid-size: 4 8;
+    grid-columns: 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+}
+
+Screen.layout-tall #main_grid {
+    grid-size: 3 10;
+    grid-columns: 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+}
+
+Screen.layout-square #main_grid {
+    grid-size: 6 6;
+    grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
+}
+
+Screen.layout-strip #main_grid {
+    grid-size: 12 2;
+    grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr;
+}
+
+/* 不同布局下的组件尺寸 */
+Screen.layout-ultrawide #p_hardware { column-span: 4; row-span: 2; }
+Screen.layout-ultrawide #p_network { column-span: 4; row-span: 1; }
+Screen.layout-ultrawide #p_clock { column-span: 4; row-span: 1; }
+Screen.layout-ultrawide #p_audio { column-span: 8; row-span: 1; }
+Screen.layout-ultrawide #p_image { column-span: 12; row-span: 1; }
+
+Screen.layout-wide #p_hardware { column-span: 4; row-span: 2; }
+Screen.layout-wide #p_network { column-span: 4; row-span: 1; }
+Screen.layout-wide #p_clock { column-span: 4; row-span: 1; }
+Screen.layout-wide #p_audio { column-span: 8; row-span: 1; }
+Screen.layout-wide #p_image { column-span: 8; row-span: 1; }
+
+Screen.layout-portrait #p_hardware { column-span: 4; row-span: 2; }
+Screen.layout-portrait #p_network { column-span: 4; row-span: 1; }
+Screen.layout-portrait #p_clock { column-span: 4; row-span: 1; }
+Screen.layout-portrait #p_audio { column-span: 4; row-span: 2; }
+Screen.layout-portrait #p_image { column-span: 4; row-span: 2; }
+
+Screen.layout-tall #p_hardware { column-span: 3; row-span: 3; }
+Screen.layout-tall #p_network { column-span: 3; row-span: 1; }
+Screen.layout-tall #p_clock { column-span: 3; row-span: 1; }
+Screen.layout-tall #p_audio { column-span: 3; row-span: 3; }
+Screen.layout-tall #p_image { column-span: 3; row-span: 2; }
+
+Screen.layout-square #p_hardware { column-span: 3; row-span: 2; }
+Screen.layout-square #p_network { column-span: 3; row-span: 1; }
+Screen.layout-square #p_clock { column-span: 3; row-span: 1; }
+Screen.layout-square #p_audio { column-span: 6; row-span: 1; }
+Screen.layout-square #p_image { column-span: 6; row-span: 3; }
+
+Screen.layout-strip #p_hardware { column-span: 3; row-span: 1; }
+Screen.layout-strip #p_network { column-span: 3; row-span: 1; }
+Screen.layout-strip #p_clock { column-span: 3; row-span: 1; }
+Screen.layout-strip #p_audio { column-span: 3; row-span: 1; }
+Screen.layout-strip #p_image { column-span: 12; row-span: 1; }
+
+/* 组件样式变体 */
+.variant-dense {
+    padding: 0 1;
+    margin: 0 1;
+}
+
+.variant-slim {
+    padding: 0;
+    margin: 0 1;
+    border: solid #5EE7FF;
+}
+
+.variant-compact {
+    padding: 0 1;
+    margin: 0 1;
+    border: solid #00FF41;
+}
+
+.variant-minimal {
+    padding: 0 1;
+    margin: 0 1;
+    border: none;
+}
+
+.variant-banner {
+    padding: 0 2;
+    margin: 0 1;
+    border: heavy #FFD700;
 }
 
 /* 编辑器样式 */
@@ -104,6 +273,44 @@ Footer {
     background: #E0E0E0;
     color: black;
     padding: 1;
+}
+
+#prop_section {
+    text-align: left;
+    text-style: bold;
+    padding: 1 0;
+}
+
+/* 模板选择界面 */
+#template_layout {
+    height: 100%;
+    width: 100%;
+    padding: 1;
+}
+
+#template_title {
+    text-align: center;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#template_list {
+    height: 1fr;
+    border: solid #444;
+    padding: 1;
+}
+
+#template_desc {
+    height: 3;
+    margin-top: 1;
+    color: #CCCCCC;
+}
+
+#template_actions {
+    grid-size: 2 1;
+    grid-columns: 1fr 1fr;
+    margin-top: 1;
+    column-gap: 2;
 }
 
 /* ========================================================================== */

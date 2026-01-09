@@ -74,7 +74,8 @@ class AudioVisualizer(BaseWidget):
         # 我们使用 16 个频段，将其镜像为 32 个
         mirrored_data = np.concatenate([np.flip(data), data])
         
-        chars = [" ", " ", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+        preset = self.get_visual_preset()
+        chars = preset.get("spectrum", [" ", "▂", "▃", "▄", "▅", "▆", "▇", "█"])
         
         result = Text()
         for i, val in enumerate(mirrored_data):

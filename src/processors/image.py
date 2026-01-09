@@ -18,7 +18,7 @@ class ImageProcessor:
     def __init__(self):
         pass
 
-    def process_image(self, image_path: str, width: int, height: int = None, color: bool = True) -> Text:
+    def process_image(self, image_path: str, width: int, height: int = None, color: bool = True, charset: str = None) -> Text:
         """
         处理图像并返回 Rich Text 对象
         
@@ -45,12 +45,12 @@ class ImageProcessor:
             # 调整大小
             resized_img = cv2.resize(img, (width, height), interpolation=cv2.INTER_AREA)
             
-            return self._to_ascii(resized_img, color)
+            return self._to_ascii(resized_img, color, charset)
             
         except Exception as e:
             return Text(f"Image Error: {e}", style="red")
 
-    def _to_ascii(self, img: np.ndarray, color: bool = True) -> Text:
+    def _to_ascii(self, img: np.ndarray, color: bool = True, charset: str = None) -> Text:
         """将图像数组转换为 ASCII 文本"""
         height, width, _ = img.shape
         result = Text()
@@ -59,7 +59,8 @@ class ImageProcessor:
         gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         
         # 字符集长度
-        char_len = len(self.SIMPLE_CHARS)
+        chars = charset if charset else self.SIMPLE_CHARS
+        char_len = len(chars)
         
         for y in range(height):
             for x in range(width):
@@ -69,7 +70,7 @@ class ImageProcessor:
                 brightness = gray_img[y, x]
                 # 映射到字符
                 char_index = int((brightness / 255) * (char_len - 1))
-                char = self.SIMPLE_CHARS[char_index]
+                char = chars[char_index]
                 
                 # 添加到 Text 对象
                 if color:

@@ -64,8 +64,11 @@ class NetworkMonitor(BaseWidget):
         )
         
         # 装饰元素
-        arrows = "▼" * min(5, int(self.down_speed / 102400) + 1) if self.down_speed > 0 else ""
-        up_arrows = "▲" * min(5, int(self.up_speed / 102400) + 1) if self.up_speed > 0 else ""
+        preset = self.get_visual_preset()
+        arrow_down = preset.get("arrow_down", "▼")
+        arrow_up = preset.get("arrow_up", "▲")
+        arrows = arrow_down * min(5, int(self.down_speed / 102400) + 1) if self.down_speed > 0 else ""
+        up_arrows = arrow_up * min(5, int(self.up_speed / 102400) + 1) if self.up_speed > 0 else ""
 
         arrows_line = Text.assemble(
             (f"RX {arrows}", "cyan"), "  ", (f"TX {up_arrows}", "magenta")

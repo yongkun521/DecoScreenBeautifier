@@ -31,6 +31,10 @@ class ImageWidget(BaseWidget):
         # 我们可以在 resize 事件中重新计算
         self.load_image()
 
+    def update_content(self) -> None:
+        """当预设变化时重新渲染"""
+        self.load_image()
+
     def load_image(self):
         """加载并处理图片"""
         if not self.image_path or not os.path.exists(self.image_path):
@@ -48,9 +52,28 @@ class ImageWidget(BaseWidget):
         w = max(1, w - 2)
         h = max(1, h - 2)
 
-        self.ascii_art = self.processor.process_image(self.image_path, width=w, height=h)
+        scale = self._get_render_scale()
+        render_w = max(1, int(w * scale))
+        render_h = max(1, int(h * scale))
+        preset = self.get_visual_preset()
+        charset = preset.get("image_chars") if preset else None
+
+        self.ascii_art = self.processor.process_image(
+            self.image_path,
+            width=render_w,
+            height=render_h,
+            charset=charset,
+        )
         self.update(Align.center(self.ascii_art, vertical="middle"))
 
     def on_resize(self) -> None:
         """当组件大小改变时重新渲染图片"""
         self.load_image()
+
+    def _get_render_scale(self) -> float:
+        scale = getattr(self.app, "global_scale", 1.0)
+        try:
+            scale = float(scale)
+        except (TypeError, ValueError):
+            scale = 1.0
+        return max(0.5, min(scale, 2.0))

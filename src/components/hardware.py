@@ -97,16 +97,22 @@ class HardwareMonitor(BaseWidget):
 
     def _make_cyber_bar(self, percentage, width=20, color="green"):
         """创建一个具有赛博风格的块状进度条"""
+        preset = self.get_visual_preset()
+        bar_full = preset.get("bar_full", "█")
+        bar_empty = preset.get("bar_empty", "░")
         filled_width = int(width * (percentage / 100))
-        bar = "█" * filled_width + "░" * (width - filled_width)
+        bar = bar_full * filled_width + bar_empty * (width - filled_width)
         return Text(bar, style=color)
 
     def _make_trend_line(self, history):
         """生成简单的趋势线"""
         if not history:
             return Text("N/A")
-        
-        chars = " ▂▃▄▅▆▇█"
+
+        preset = self.get_visual_preset()
+        chars = preset.get("sparkline", "▁▂▃▄▅▆▇█")
+        if chars and chars[0] != " ":
+            chars = " " + chars
         line = ""
         for val in history:
             idx = int((val / 100) * (len(chars) - 1))

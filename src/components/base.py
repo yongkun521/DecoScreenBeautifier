@@ -25,6 +25,7 @@ class BaseWidget(Static):
         self.border_title = f" [ {title} ] "
         self._update_interval = update_interval
         self._timer = None
+        self._visual_preset = {}
 
     def on_mount(self) -> None:
         """组件挂载时启动定时更新"""
@@ -38,6 +39,20 @@ class BaseWidget(Static):
         子类必须实现此方法以更新显示内容
         """
         pass
+
+    def set_visual_preset(self, preset: dict) -> None:
+        """设置渲染字符/样式预设"""
+        self._visual_preset = preset or {}
+        self.update_content()
+
+    def get_visual_preset(self) -> dict:
+        """获取当前预设，如果未设置则尝试读取 App 全局预设"""
+        if self._visual_preset:
+            return self._visual_preset
+        app = getattr(self, "app", None)
+        if app and hasattr(app, "visual_preset"):
+            return app.visual_preset
+        return {}
 
     def glitch_text(self, text: str, probability: float = 0.05) -> Text:
         """为文本添加随机故障效果"""
