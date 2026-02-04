@@ -55,11 +55,7 @@ class TemplateScreen(Screen):
                     id="filter_style",
                 )
 
-            items = [
-                ListItem(Label(self._template_label(template)), id=f"tpl_{template['id']}")
-                for template in self._filtered_templates()
-            ]
-            yield ListView(*items, id="template_list")
+            yield ListView(id="template_list")
             yield Static("", id="template_desc")
             
             with Grid(id="template_actions"):
@@ -89,17 +85,17 @@ class TemplateScreen(Screen):
             self._selected_template_id = template_id
             self._update_description(template_id)
 
-    def on_mount(self) -> None:
-        self._refresh_template_list(keep_selection=True)
+    async def on_mount(self) -> None:
+        await self._refresh_template_list(keep_selection=True)
 
-    def on_select_changed(self, event: Select.Changed) -> None:
+    async def on_select_changed(self, event: Select.Changed) -> None:
         if event.select.id == "filter_profile":
             self._filter_profile = event.value
         elif event.select.id == "filter_purpose":
             self._filter_purpose = event.value
         elif event.select.id == "filter_style":
             self._filter_style = event.value
-        self._refresh_template_list(keep_selection=False)
+        await self._refresh_template_list(keep_selection=False)
 
     def _build_filter_options(self, key: str) -> list[tuple[str, str]]:
         values = set()
@@ -134,16 +130,18 @@ class TemplateScreen(Screen):
         style = "/".join(template.get("style_tags", []))
         return f"{template['name']} · {template['screen_profile']} · {purpose} · {style}"
 
-    def _refresh_template_list(self, keep_selection: bool = True) -> None:
+    async def _refresh_template_list(self, keep_selection: bool = True) -> None:
         list_view = self.query_one("#template_list", ListView)
         templates = self._filtered_templates()
-        list_view.clear()
+        await list_view.clear()
         selected_index = None
+        items = []
         for index, template in enumerate(templates):
-            item = ListItem(Label(self._template_label(template)), id=f"tpl_{template['id']}")
-            list_view.append(item)
+            items.append(ListItem(Label(self._template_label(template)), id=f"tpl_{template['id']}"))
             if keep_selection and template.get("id") == self._selected_template_id:
                 selected_index = index
+        if items:
+            await list_view.extend(items)
         if templates and selected_index is None:
             self._selected_template_id = templates[0]["id"]
             selected_index = 0

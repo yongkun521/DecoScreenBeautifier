@@ -229,9 +229,9 @@ class EditorScreen(Screen):
 
         yield Footer()
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         self._load_layout()
-        self._refresh_editor_state()
+        await self._refresh_editor_state()
 
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
         if event.list_view.id == "toolbox_list":
@@ -245,14 +245,14 @@ class EditorScreen(Screen):
         elif event.list_view.id == "component_list":
             self._set_selected_component_from_item(event.item)
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
         if button_id == "btn_add":
-            self._handle_add_component()
+            await self._handle_add_component()
         elif button_id == "btn_apply":
-            self._handle_apply_changes()
+            await self._handle_apply_changes()
         elif button_id == "btn_remove":
-            self._handle_remove_component()
+            await self._handle_remove_component()
         elif button_id == "btn_save":
             self.action_save_layout()
 
@@ -361,13 +361,13 @@ class EditorScreen(Screen):
             self.add_class(theme_class)
         self._active_theme_class = theme_class
 
-    def _refresh_editor_state(self) -> None:
+    async def _refresh_editor_state(self) -> None:
         if self.selected_component_id is None:
             components = self._components()
             if components:
                 self.selected_component_id = components[0].get("id")
         self._refresh_global_settings()
-        self._refresh_component_list()
+        await self._refresh_component_list()
         self._refresh_canvas()
         self._refresh_property_panel()
         if self.selected_tool_key is None and COMPONENT_TOOLS:
@@ -383,17 +383,19 @@ class EditorScreen(Screen):
         cols, rows = self._grid_size()
         self.query_one("#prop_grid", Label).update(f"{cols} cols x {rows} rows")
 
-    def _refresh_component_list(self) -> None:
+    async def _refresh_component_list(self) -> None:
         list_view = self.query_one("#component_list", ListView)
-        list_view.clear()
+        await list_view.clear()
         selected_index = None
+        items = []
         for index, component in enumerate(self._components()):
             pos = component.get("pos", [0, 0, 1, 1])
             label = f"{component.get('id')} ({component.get('type')}) [{pos[0]},{pos[1]}] {pos[2]}x{pos[3]}"
-            item = ListItem(Label(label), id=f"cmp_{component.get('id')}")
-            list_view.append(item)
+            items.append(ListItem(Label(label), id=f"cmp_{component.get('id')}"))
             if component.get("id") == self.selected_component_id:
                 selected_index = index
+        if items:
+            await list_view.extend(items)
         if selected_index is not None:
             list_view.index = selected_index
 
@@ -457,7 +459,7 @@ class EditorScreen(Screen):
             self._refresh_canvas()
             self._refresh_property_panel()
 
-    def _handle_add_component(self) -> None:
+    async def _handle_add_component(self) -> None:
         if not self.selected_tool_key or self.selected_tool_key not in self._tool_lookup:
             self.notify("Select a component from the toolbox first.")
             return
@@ -467,11 +469,11 @@ class EditorScreen(Screen):
             return
         self.layout_data.setdefault("components", []).append(new_component)
         self.selected_component_id = new_component["id"]
-        self._refresh_component_list()
+        await self._refresh_component_list()
         self._refresh_canvas()
         self._refresh_property_panel()
 
-    def _handle_apply_changes(self) -> None:
+    async def _handle_apply_changes(self) -> None:
         if not self.selected_component_id:
             self.notify("No component selected.")
             return
@@ -488,18 +490,18 @@ class EditorScreen(Screen):
         if not self._validate_position(self.selected_component_id, col, row, col_span, row_span):
             return
         component["pos"] = [col, row, col_span, row_span]
-        self._refresh_component_list()
+        await self._refresh_component_list()
         self._refresh_canvas()
         self._refresh_property_panel()
 
-    def _handle_remove_component(self) -> None:
+    async def _handle_remove_component(self) -> None:
         if not self.selected_component_id:
             self.notify("No component selected.")
             return
         components = self._components()
         self.layout_data["components"] = [c for c in components if c.get("id") != self.selected_component_id]
         self.selected_component_id = None
-        self._refresh_component_list()
+        await self._refresh_component_list()
         self._refresh_canvas()
         self._refresh_property_panel()
 
