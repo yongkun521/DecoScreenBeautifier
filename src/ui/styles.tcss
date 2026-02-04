@@ -27,6 +27,26 @@ Screen.theme-mono {
     color: #D0D0D0;
 }
 
+Screen.theme-vapor {
+    background: #1A0F2B;
+    color: #7DF9FF;
+}
+
+Screen.theme-ember {
+    background: #1F0E05;
+    color: #FFB347;
+}
+
+Screen.theme-aurora {
+    background: #041821;
+    color: #7CFFB2;
+}
+
+Screen.theme-night {
+    background: #0A0D12;
+    color: #C0C0C0;
+}
+
 /* 头部样式 */
 Header {
     dock: top;
@@ -69,6 +89,30 @@ Screen.theme-mono Header {
     border-bottom: solid #666666;
 }
 
+Screen.theme-vapor Header {
+    background: #2A143D;
+    color: #FF6AD5;
+    border-bottom: double #B967FF;
+}
+
+Screen.theme-ember Header {
+    background: #2B1407;
+    color: #FF6A00;
+    border-bottom: solid #FF6A00;
+}
+
+Screen.theme-aurora Header {
+    background: #062334;
+    color: #7CFFB2;
+    border-bottom: solid #4ED4FF;
+}
+
+Screen.theme-night Header {
+    background: #121620;
+    color: #C0C0C0;
+    border-bottom: solid #444444;
+}
+
 Screen.theme-neon Footer {
     background: #1a1a1a;
     color: #00FFFF;
@@ -87,6 +131,26 @@ Screen.theme-ice Footer {
 Screen.theme-mono Footer {
     background: #1A1A1A;
     color: #D0D0D0;
+}
+
+Screen.theme-vapor Footer {
+    background: #2A143D;
+    color: #7DF9FF;
+}
+
+Screen.theme-ember Footer {
+    background: #2B1407;
+    color: #FFB347;
+}
+
+Screen.theme-aurora Footer {
+    background: #062334;
+    color: #4ED4FF;
+}
+
+Screen.theme-night Footer {
+    background: #121620;
+    color: #A0A0A0;
 }
 
 /* 主网格布局 */
@@ -130,11 +194,35 @@ Screen.theme-mono Footer {
     border: heavy #00FF41;
 }
 
+#p_ticker {
+    column-span: 6;
+    row-span: 1;
+    border: solid #00FFFF;
+}
+
+#p_badge {
+    column-span: 2;
+    row-span: 1;
+    border: solid #FF00FF;
+}
+
+#p_stream {
+    column-span: 3;
+    row-span: 2;
+    border: solid #5EE7FF;
+}
+
 /* 布局模板：不同屏幕比例 */
 Screen.layout-ultrawide #main_grid {
     grid-size: 12 3;
     grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
     grid-rows: 1fr 1fr 1fr;
+}
+
+Screen.layout-ultrawide-plus #main_grid {
+    grid-size: 12 4;
+    grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr 1fr 1fr;
 }
 
 Screen.layout-wide #main_grid {
@@ -143,10 +231,22 @@ Screen.layout-wide #main_grid {
     grid-rows: 1fr 1fr 1fr 1fr;
 }
 
+Screen.layout-wide-plus #main_grid {
+    grid-size: 8 5;
+    grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr 1fr 1fr 1fr;
+}
+
 Screen.layout-portrait #main_grid {
     grid-size: 4 8;
     grid-columns: 1fr 1fr 1fr 1fr;
     grid-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+}
+
+Screen.layout-portrait-plus #main_grid {
+    grid-size: 4 10;
+    grid-columns: 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
 }
 
 Screen.layout-tall #main_grid {
@@ -167,42 +267,102 @@ Screen.layout-strip #main_grid {
     grid-rows: 1fr 1fr;
 }
 
+Screen.layout-strip-plus #main_grid {
+    grid-size: 12 3;
+    grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr 1fr;
+}
+
 /* 不同布局下的组件尺寸 */
 Screen.layout-ultrawide #p_hardware { column-span: 4; row-span: 2; }
 Screen.layout-ultrawide #p_network { column-span: 4; row-span: 1; }
 Screen.layout-ultrawide #p_clock { column-span: 4; row-span: 1; }
 Screen.layout-ultrawide #p_audio { column-span: 8; row-span: 1; }
 Screen.layout-ultrawide #p_image { column-span: 12; row-span: 1; }
+Screen.layout-ultrawide #p_ticker { column-span: 12; row-span: 1; }
+Screen.layout-ultrawide #p_badge { column-span: 3; row-span: 1; }
+Screen.layout-ultrawide #p_stream { column-span: 4; row-span: 2; }
+
+Screen.layout-ultrawide-plus #p_hardware { column-span: 4; row-span: 2; }
+Screen.layout-ultrawide-plus #p_network { column-span: 4; row-span: 1; }
+Screen.layout-ultrawide-plus #p_clock { column-span: 4; row-span: 1; }
+Screen.layout-ultrawide-plus #p_audio { column-span: 8; row-span: 1; }
+Screen.layout-ultrawide-plus #p_image { column-span: 12; row-span: 1; }
+Screen.layout-ultrawide-plus #p_ticker { column-span: 9; row-span: 1; }
+Screen.layout-ultrawide-plus #p_badge { column-span: 3; row-span: 1; }
+Screen.layout-ultrawide-plus #p_stream { column-span: 6; row-span: 1; }
 
 Screen.layout-wide #p_hardware { column-span: 4; row-span: 2; }
 Screen.layout-wide #p_network { column-span: 4; row-span: 1; }
 Screen.layout-wide #p_clock { column-span: 4; row-span: 1; }
 Screen.layout-wide #p_audio { column-span: 8; row-span: 1; }
 Screen.layout-wide #p_image { column-span: 8; row-span: 1; }
+Screen.layout-wide #p_ticker { column-span: 8; row-span: 1; }
+Screen.layout-wide #p_badge { column-span: 2; row-span: 1; }
+Screen.layout-wide #p_stream { column-span: 4; row-span: 2; }
+
+Screen.layout-wide-plus #p_hardware { column-span: 4; row-span: 2; }
+Screen.layout-wide-plus #p_network { column-span: 4; row-span: 1; }
+Screen.layout-wide-plus #p_clock { column-span: 4; row-span: 1; }
+Screen.layout-wide-plus #p_audio { column-span: 8; row-span: 1; }
+Screen.layout-wide-plus #p_image { column-span: 8; row-span: 1; }
+Screen.layout-wide-plus #p_ticker { column-span: 8; row-span: 1; }
+Screen.layout-wide-plus #p_badge { column-span: 2; row-span: 1; }
+Screen.layout-wide-plus #p_stream { column-span: 8; row-span: 1; }
 
 Screen.layout-portrait #p_hardware { column-span: 4; row-span: 2; }
 Screen.layout-portrait #p_network { column-span: 4; row-span: 1; }
 Screen.layout-portrait #p_clock { column-span: 4; row-span: 1; }
 Screen.layout-portrait #p_audio { column-span: 4; row-span: 2; }
 Screen.layout-portrait #p_image { column-span: 4; row-span: 2; }
+Screen.layout-portrait #p_ticker { column-span: 4; row-span: 1; }
+Screen.layout-portrait #p_badge { column-span: 4; row-span: 1; }
+Screen.layout-portrait #p_stream { column-span: 4; row-span: 2; }
+
+Screen.layout-portrait-plus #p_hardware { column-span: 4; row-span: 3; }
+Screen.layout-portrait-plus #p_network { column-span: 4; row-span: 1; }
+Screen.layout-portrait-plus #p_clock { column-span: 4; row-span: 1; }
+Screen.layout-portrait-plus #p_audio { column-span: 4; row-span: 2; }
+Screen.layout-portrait-plus #p_image { column-span: 4; row-span: 2; }
+Screen.layout-portrait-plus #p_ticker { column-span: 4; row-span: 1; }
+Screen.layout-portrait-plus #p_badge { column-span: 4; row-span: 1; }
+Screen.layout-portrait-plus #p_stream { column-span: 4; row-span: 4; }
 
 Screen.layout-tall #p_hardware { column-span: 3; row-span: 3; }
 Screen.layout-tall #p_network { column-span: 3; row-span: 1; }
 Screen.layout-tall #p_clock { column-span: 3; row-span: 1; }
 Screen.layout-tall #p_audio { column-span: 3; row-span: 3; }
 Screen.layout-tall #p_image { column-span: 3; row-span: 2; }
+Screen.layout-tall #p_ticker { column-span: 3; row-span: 1; }
+Screen.layout-tall #p_badge { column-span: 3; row-span: 1; }
+Screen.layout-tall #p_stream { column-span: 3; row-span: 3; }
 
 Screen.layout-square #p_hardware { column-span: 3; row-span: 2; }
 Screen.layout-square #p_network { column-span: 3; row-span: 1; }
 Screen.layout-square #p_clock { column-span: 3; row-span: 1; }
 Screen.layout-square #p_audio { column-span: 6; row-span: 1; }
 Screen.layout-square #p_image { column-span: 6; row-span: 3; }
+Screen.layout-square #p_ticker { column-span: 6; row-span: 1; }
+Screen.layout-square #p_badge { column-span: 6; row-span: 1; }
+Screen.layout-square #p_stream { column-span: 6; row-span: 2; }
 
 Screen.layout-strip #p_hardware { column-span: 3; row-span: 1; }
 Screen.layout-strip #p_network { column-span: 3; row-span: 1; }
 Screen.layout-strip #p_clock { column-span: 3; row-span: 1; }
 Screen.layout-strip #p_audio { column-span: 3; row-span: 1; }
 Screen.layout-strip #p_image { column-span: 12; row-span: 1; }
+Screen.layout-strip #p_ticker { column-span: 12; row-span: 1; }
+Screen.layout-strip #p_badge { column-span: 3; row-span: 1; }
+Screen.layout-strip #p_stream { column-span: 6; row-span: 1; }
+
+Screen.layout-strip-plus #p_hardware { column-span: 4; row-span: 1; }
+Screen.layout-strip-plus #p_network { column-span: 6; row-span: 1; }
+Screen.layout-strip-plus #p_clock { column-span: 6; row-span: 1; }
+Screen.layout-strip-plus #p_audio { column-span: 12; row-span: 1; }
+Screen.layout-strip-plus #p_image { column-span: 12; row-span: 1; }
+Screen.layout-strip-plus #p_ticker { column-span: 9; row-span: 1; }
+Screen.layout-strip-plus #p_badge { column-span: 3; row-span: 1; }
+Screen.layout-strip-plus #p_stream { column-span: 12; row-span: 1; }
 
 /* 组件样式变体 */
 .variant-dense {
@@ -232,6 +392,19 @@ Screen.layout-strip #p_image { column-span: 12; row-span: 1; }
     padding: 0 2;
     margin: 0 1;
     border: heavy #FFD700;
+}
+
+.variant-glow {
+    padding: 0 2;
+    margin: 0 1;
+    border: heavy #7DF9FF;
+    background: #071321;
+}
+
+.variant-outline {
+    padding: 0 1;
+    margin: 0 1;
+    border: double #B967FF;
 }
 
 /* 编辑器样式 */
@@ -333,8 +506,15 @@ Screen.layout-strip #p_image { column-span: 12; row-span: 1; }
     padding: 1;
 }
 
+#template_filters {
+    grid-size: 3 1;
+    grid-columns: 1fr 1fr 1fr;
+    grid-gutter: 1;
+    margin-bottom: 1;
+}
+
 #template_desc {
-    height: 3;
+    height: 5;
     margin-top: 1;
     color: #CCCCCC;
 }

@@ -5,8 +5,10 @@ from pathlib import Path
 
 from core.presets import (
     DEFAULT_FONT_PRESET_ID,
+    DEFAULT_STYLE_PRESET_ID,
     DEFAULT_TEMPLATE_ID,
     get_font_preset,
+    get_style_preset,
     get_template,
     list_templates,
 )
@@ -38,6 +40,7 @@ class ConfigManager:
             "startup_enabled": False,
             "template_id": DEFAULT_TEMPLATE_ID,
             "font_preset": DEFAULT_FONT_PRESET_ID,
+            "style_preset": DEFAULT_STYLE_PRESET_ID,
             "global_scale": 1.0,
         }
         self.current_template = self.settings["template_id"]
@@ -63,6 +66,7 @@ class ConfigManager:
         # 补全缺失项，兼容旧版本设置
         self.settings.setdefault("template_id", DEFAULT_TEMPLATE_ID)
         self.settings.setdefault("font_preset", DEFAULT_FONT_PRESET_ID)
+        self.settings.setdefault("style_preset", DEFAULT_STYLE_PRESET_ID)
         self.settings.setdefault("global_scale", 1.0)
         self.current_template = self.settings.get("template_id", DEFAULT_TEMPLATE_ID)
 
@@ -95,6 +99,7 @@ class ConfigManager:
         self.settings["template_id"] = template["id"]
         self.settings["theme"] = template.get("theme_class", "cyberpunk")
         self.settings["font_preset"] = template.get("font_preset", DEFAULT_FONT_PRESET_ID)
+        self.settings["style_preset"] = template.get("style_preset", DEFAULT_STYLE_PRESET_ID)
         self.settings["global_scale"] = template.get("global_scale", 1.0)
         self.current_template = template["id"]
         self.save_settings()
@@ -102,6 +107,9 @@ class ConfigManager:
 
     def get_font_preset(self, preset_id: str):
         return get_font_preset(preset_id)
+
+    def get_style_preset(self, preset_id: str):
+        return get_style_preset(preset_id)
 
     def load_layout(self, layout_name: str) -> dict:
         """加载指定布局"""

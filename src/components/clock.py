@@ -33,13 +33,17 @@ class ClockWidget(BaseWidget):
 
     def _build_content(self, time_str, date_str, weekday_str):
         """渲染组件内容"""
+        time_color = self.get_style_color("time", "magenta")
+        date_color = self.get_style_color("date", "cyan")
+        accent_color = self.get_style_color("accent", "yellow")
+
         # 时间主体
-        time_text = Text(time_str, style="bold magenta")
+        time_text = Text(time_str, style=f"bold {time_color}")
         
         # 底部信息
         info_text = Text.assemble(
-            (f"{date_str} ", "cyan"),
-            (f"[{weekday_str}]", "bold yellow")
+            (f"{date_str} ", date_color),
+            (f"[{weekday_str}]", f"bold {accent_color}")
         )
         
         # 添加一些随机故障效果

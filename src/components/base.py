@@ -22,10 +22,12 @@ class BaseWidget(Static):
 
     def __init__(self, title: str = "", update_interval: float = 1.0, **kwargs):
         super().__init__(**kwargs)
+        self._title = title
         self.border_title = f" [ {title} ] "
         self._update_interval = update_interval
         self._timer = None
         self._visual_preset = {}
+        self._style_preset = {}
 
     def on_mount(self) -> None:
         """组件挂载时启动定时更新"""
@@ -45,6 +47,12 @@ class BaseWidget(Static):
         self._visual_preset = preset or {}
         self.update_content()
 
+    def set_style_preset(self, preset: dict) -> None:
+        """设置样式 Token 预设"""
+        self._style_preset = preset or {}
+        self._apply_style_preset()
+        self.update_content()
+
     def get_visual_preset(self) -> dict:
         """获取当前预设，如果未设置则尝试读取 App 全局预设"""
         if self._visual_preset:
@@ -53,6 +61,29 @@ class BaseWidget(Static):
         if app and hasattr(app, "visual_preset"):
             return app.visual_preset
         return {}
+
+    def get_style_preset(self) -> dict:
+        """获取样式 Token 预设"""
+        if self._style_preset:
+            return self._style_preset
+        app = getattr(self, "app", None)
+        if app and hasattr(app, "style_preset"):
+            return app.style_preset
+        return {}
+
+    def get_style_color(self, key: str, default: str) -> str:
+        preset = self.get_style_preset()
+        colors = preset.get("colors", {}) if isinstance(preset, dict) else {}
+        return colors.get(key, default)
+
+    def _apply_style_preset(self) -> None:
+        preset = self.get_style_preset()
+        title_style = preset.get("title_style")
+        title_color = preset.get("title_color")
+        if title_style:
+            self.styles.border_title_style = title_style
+        if title_color:
+            self.styles.border_title_color = title_color
 
     def glitch_text(self, text: str, probability: float = 0.05) -> Text:
         """为文本添加随机故障效果"""

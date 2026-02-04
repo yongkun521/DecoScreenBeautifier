@@ -50,16 +50,20 @@ class NetworkMonitor(BaseWidget):
             else:
                 return f"{speed / 1024:.2f} KB/s"
 
+        down_color = self.get_style_color("net_down", "cyan")
+        up_color = self.get_style_color("net_up", "magenta")
+        label_color = self.get_style_color("accent", "white")
+
         table = Table.grid(padding=(0, 2))
         table.add_column(justify="right")
         table.add_column(justify="left")
         
         table.add_row(
-            Text("DOWNLOAD:", style="bold cyan"),
+            Text("DOWNLOAD:", style=f"bold {label_color}"),
             Text(format_speed(self.down_speed), style="bold white")
         )
         table.add_row(
-            Text("UPLOAD:", style="bold magenta"),
+            Text("UPLOAD:", style=f"bold {label_color}"),
             Text(format_speed(self.up_speed), style="bold white")
         )
         
@@ -71,7 +75,7 @@ class NetworkMonitor(BaseWidget):
         up_arrows = arrow_up * min(5, int(self.up_speed / 102400) + 1) if self.up_speed > 0 else ""
 
         arrows_line = Text.assemble(
-            (f"RX {arrows}", "cyan"), "  ", (f"TX {up_arrows}", "magenta")
+            (f"RX {arrows}", down_color), "  ", (f"TX {up_arrows}", up_color)
         )
         return Align.center(
             Group(table, Text(""), arrows_line),

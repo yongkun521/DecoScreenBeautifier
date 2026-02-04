@@ -76,6 +76,9 @@ class AudioVisualizer(BaseWidget):
         
         preset = self.get_visual_preset()
         chars = preset.get("spectrum", [" ", "▂", "▃", "▄", "▅", "▆", "▇", "█"])
+        low_color = self.get_style_color("audio_low", "cyan")
+        mid_color = self.get_style_color("audio_mid", "blue")
+        high_color = self.get_style_color("audio_high", "magenta")
         
         result = Text()
         for i, val in enumerate(mirrored_data):
@@ -86,11 +89,11 @@ class AudioVisualizer(BaseWidget):
             # 两边青色，中间紫色
             dist_from_center = abs(i - 15.5) / 16.0
             if dist_from_center < 0.3:
-                color = "magenta"
+                color = high_color
             elif dist_from_center < 0.6:
-                color = "blue"
+                color = mid_color
             else:
-                color = "cyan"
+                color = low_color
                 
             # 添加闪烁效果
             style = f"bold {color}"

@@ -10,6 +10,9 @@ from components.clock import ClockWidget
 from components.audio import AudioVisualizer
 from components.image import ImageWidget
 from components.network import NetworkMonitor
+from components.status import StatusBadge
+from components.stream import DataStreamWidget
+from components.ticker import InfoTicker
 
 class DisplayScreen(Screen):
     """主显示界面，用于展示各种 CLI 组件"""
@@ -38,6 +41,15 @@ class DisplayScreen(Screen):
             
             # 图像组件
             yield ImageWidget(id="p_image", image_path="assets/logo.png")
+
+            # 信息条组件
+            yield InfoTicker(id="p_ticker")
+
+            # 状态徽章组件
+            yield StatusBadge(id="p_badge")
+
+            # 信号流装饰组件
+            yield DataStreamWidget(id="p_stream")
             
         yield Footer()
 
@@ -63,6 +75,7 @@ class DisplayScreen(Screen):
         self._active_template_classes = new_classes
 
         self._apply_component_variants(template.get("component_variants", {}))
+        self._apply_component_visibility(template.get("active_components"))
         self._apply_visual_preset()
 
     def _apply_component_variants(self, variants: dict) -> None:
@@ -72,6 +85,8 @@ class DisplayScreen(Screen):
             "variant-compact",
             "variant-minimal",
             "variant-banner",
+            "variant-glow",
+            "variant-outline",
         }
         for widget in self.query(BaseWidget):
             widget.remove_class(*variant_classes)
@@ -86,3 +101,12 @@ class DisplayScreen(Screen):
     def _apply_visual_preset(self) -> None:
         for widget in self.query(BaseWidget):
             widget.set_visual_preset(getattr(self.app, "visual_preset", {}))
+            widget.set_style_preset(getattr(self.app, "style_preset", {}))
+
+    def _apply_component_visibility(self, active_components) -> None:
+        if active_components is None:
+            active = {"p_hardware", "p_network", "p_clock", "p_audio", "p_image"}
+        else:
+            active = set(active_components)
+        for widget in self.query(BaseWidget):
+            widget.display = widget.id in active

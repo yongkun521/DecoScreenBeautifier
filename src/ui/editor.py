@@ -34,23 +34,33 @@ COMPONENT_TOOLS: List[ComponentTool] = [
     ComponentTool("image_matrix", "Image - Matrix", "ImageWidget", "p_image", "variant-slim"),
     ComponentTool("ticker", "Info Ticker", "InfoTicker", "p_ticker", "variant-banner", default_span=(4, 1)),
     ComponentTool("badge", "Status Badge", "StatusBadge", "p_badge", "variant-compact", default_span=(2, 1)),
+    ComponentTool("stream", "Signal Stream", "DataStreamWidget", "p_stream", "variant-glow", default_span=(4, 2)),
 ]
 
-BASE_COMPONENTS: List[Dict[str, str]] = [
-    {"id": "p_hardware", "type": "HardwareMonitor"},
-    {"id": "p_network", "type": "NetworkMonitor"},
-    {"id": "p_clock", "type": "ClockWidget"},
-    {"id": "p_audio", "type": "AudioVisualizer"},
-    {"id": "p_image", "type": "ImageWidget"},
-]
+DEFAULT_ACTIVE_COMPONENTS = ["p_hardware", "p_network", "p_clock", "p_audio", "p_image"]
+
+BASE_COMPONENTS: Dict[str, str] = {
+    "p_hardware": "HardwareMonitor",
+    "p_network": "NetworkMonitor",
+    "p_clock": "ClockWidget",
+    "p_audio": "AudioVisualizer",
+    "p_image": "ImageWidget",
+    "p_ticker": "InfoTicker",
+    "p_badge": "StatusBadge",
+    "p_stream": "DataStreamWidget",
+}
 
 LAYOUT_GRID_SIZES: Dict[str, Tuple[int, int]] = {
     "layout-ultrawide": (12, 3),
+    "layout-ultrawide-plus": (12, 4),
     "layout-wide": (8, 4),
+    "layout-wide-plus": (8, 5),
     "layout-portrait": (4, 8),
+    "layout-portrait-plus": (4, 10),
     "layout-tall": (3, 10),
     "layout-square": (6, 6),
     "layout-strip": (12, 2),
+    "layout-strip-plus": (12, 3),
 }
 
 DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
@@ -60,6 +70,19 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_clock": (4, 1),
         "p_audio": (8, 1),
         "p_image": (12, 1),
+        "p_ticker": (12, 1),
+        "p_badge": (3, 1),
+        "p_stream": (4, 2),
+    },
+    "layout-ultrawide-plus": {
+        "p_hardware": (4, 2),
+        "p_network": (4, 1),
+        "p_clock": (4, 1),
+        "p_audio": (8, 1),
+        "p_image": (12, 1),
+        "p_ticker": (9, 1),
+        "p_badge": (3, 1),
+        "p_stream": (6, 1),
     },
     "layout-wide": {
         "p_hardware": (4, 2),
@@ -67,6 +90,19 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_clock": (4, 1),
         "p_audio": (8, 1),
         "p_image": (8, 1),
+        "p_ticker": (8, 1),
+        "p_badge": (2, 1),
+        "p_stream": (4, 2),
+    },
+    "layout-wide-plus": {
+        "p_hardware": (4, 2),
+        "p_network": (4, 1),
+        "p_clock": (4, 1),
+        "p_audio": (8, 1),
+        "p_image": (8, 1),
+        "p_ticker": (8, 1),
+        "p_badge": (2, 1),
+        "p_stream": (8, 1),
     },
     "layout-portrait": {
         "p_hardware": (4, 2),
@@ -74,6 +110,19 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_clock": (4, 1),
         "p_audio": (4, 2),
         "p_image": (4, 2),
+        "p_ticker": (4, 1),
+        "p_badge": (4, 1),
+        "p_stream": (4, 2),
+    },
+    "layout-portrait-plus": {
+        "p_hardware": (4, 3),
+        "p_network": (4, 1),
+        "p_clock": (4, 1),
+        "p_audio": (4, 2),
+        "p_image": (4, 2),
+        "p_ticker": (4, 1),
+        "p_badge": (4, 1),
+        "p_stream": (4, 4),
     },
     "layout-tall": {
         "p_hardware": (3, 3),
@@ -81,6 +130,9 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_clock": (3, 1),
         "p_audio": (3, 3),
         "p_image": (3, 2),
+        "p_ticker": (3, 1),
+        "p_badge": (3, 1),
+        "p_stream": (3, 3),
     },
     "layout-square": {
         "p_hardware": (3, 2),
@@ -88,6 +140,9 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_clock": (3, 1),
         "p_audio": (6, 1),
         "p_image": (6, 3),
+        "p_ticker": (6, 1),
+        "p_badge": (6, 1),
+        "p_stream": (6, 2),
     },
     "layout-strip": {
         "p_hardware": (3, 1),
@@ -95,6 +150,19 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_clock": (3, 1),
         "p_audio": (3, 1),
         "p_image": (12, 1),
+        "p_ticker": (12, 1),
+        "p_badge": (3, 1),
+        "p_stream": (6, 1),
+    },
+    "layout-strip-plus": {
+        "p_hardware": (4, 1),
+        "p_network": (6, 1),
+        "p_clock": (6, 1),
+        "p_audio": (12, 1),
+        "p_image": (12, 1),
+        "p_ticker": (9, 1),
+        "p_badge": (3, 1),
+        "p_stream": (12, 1),
     },
 }
 
@@ -219,13 +287,17 @@ class EditorScreen(Screen):
         cols, rows = self._grid_size_for_class(layout_class)
         variant_map = self.template.get("component_variants", {}) if self.template else {}
         components: List[Dict[str, object]] = []
-        for base in BASE_COMPONENTS:
-            base_id = base["id"]
+        active_components = self.template.get("active_components") if self.template else None
+        active_ids = active_components or DEFAULT_ACTIVE_COMPONENTS
+        for base_id in active_ids:
+            component_type = BASE_COMPONENTS.get(base_id)
+            if not component_type:
+                continue
             col_span, row_span = self._default_span(layout_class, base_id)
             components.append(
                 {
                     "id": base_id,
-                    "type": base["type"],
+                    "type": component_type,
                     "variant": variant_map.get(base_id),
                     "pos": [0, 0, col_span, row_span],
                 }
@@ -304,8 +376,9 @@ class EditorScreen(Screen):
     def _refresh_global_settings(self) -> None:
         settings = self.config_manager.settings if self.config_manager else {}
         font_preset = settings.get("font_preset", "default")
+        style_preset = settings.get("style_preset", "default")
         global_scale = settings.get("global_scale", 1.0)
-        self.query_one("#prop_font", Label).update(f"Font Preset: {font_preset}")
+        self.query_one("#prop_font", Label).update(f"Font Preset: {font_preset} | Style: {style_preset}")
         self.query_one("#prop_scale", Label).update(f"Global Scale: {global_scale}")
         cols, rows = self._grid_size()
         self.query_one("#prop_grid", Label).update(f"{cols} cols x {rows} rows")

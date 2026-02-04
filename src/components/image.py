@@ -38,7 +38,8 @@ class ImageWidget(BaseWidget):
     def load_image(self):
         """加载并处理图片"""
         if not self.image_path or not os.path.exists(self.image_path):
-            self.update(Align.center(Text("No Image Loaded", style="red"), vertical="middle"))
+            error_color = self.get_style_color("danger", "red")
+            self.update(Align.center(Text("No Image Loaded", style=error_color), vertical="middle"))
             return
 
         # 获取组件当前大小 (字符数)

@@ -8,7 +8,7 @@ from ui.display import DisplayScreen
 from ui.editor import EditorScreen
 from ui.templates import TemplateScreen
 from config.manager import ConfigManager
-from core.presets import get_font_preset
+from core.presets import get_font_preset, get_style_preset
 
 class DecoScreenApp(App):
     """DecoScreenBeautifier 主应用程序"""
@@ -28,6 +28,7 @@ class DecoScreenApp(App):
         self.config_manager = ConfigManager()
         self.display_screen = None
         self.visual_preset = get_font_preset(None)
+        self.style_preset = get_style_preset(None)
         self.global_scale = 1.0
 
     def on_mount(self) -> None:
@@ -44,6 +45,7 @@ class DecoScreenApp(App):
 
     def _refresh_visual_settings(self) -> None:
         self.visual_preset = get_font_preset(self.config_manager.settings.get("font_preset"))
+        self.style_preset = get_style_preset(self.config_manager.settings.get("style_preset"))
         try:
             self.global_scale = float(self.config_manager.settings.get("global_scale", 1.0))
         except (TypeError, ValueError):

@@ -1,6 +1,6 @@
 from textual.screen import Screen
 from textual.containers import Grid, Vertical
-from textual.widgets import Header, Footer, Button, Label, ListView, ListItem, Static
+from textual.widgets import Header, Footer, Button, Label, ListView, ListItem, Static, Select
 from textual.app import ComposeResult
 from config.manager import ConfigManager
 
@@ -15,6 +15,9 @@ class TemplateScreen(Screen):
         self._templates = []
         self._template_lookup = {}
         self._selected_template_id = None
+        self._filter_profile = "all"
+        self._filter_purpose = "all"
+        self._filter_style = "all"
 
     def compose(self) -> ComposeResult:
         """构建模板界面布局"""
@@ -29,12 +32,33 @@ class TemplateScreen(Screen):
             self._template_lookup = {tpl["id"]: tpl for tpl in self._templates}
             self._selected_template_id = self.config_manager.settings.get("template_id")
 
-            items = []
-            for template in self._templates:
-                template_id = template["id"]
-                label_text = f"{template['name']} · {template['screen_profile']} · {', '.join(template['tags'])}"
-                items.append(ListItem(Label(label_text), id=f"tpl_{template_id}"))
+            with Grid(id="template_filters"):
+                yield Select(
+                    self._build_filter_options("screen_profile"),
+                    prompt="Profile",
+                    value=self._filter_profile,
+                    allow_blank=False,
+                    id="filter_profile",
+                )
+                yield Select(
+                    self._build_filter_options("purpose_tags"),
+                    prompt="Purpose",
+                    value=self._filter_purpose,
+                    allow_blank=False,
+                    id="filter_purpose",
+                )
+                yield Select(
+                    self._build_filter_options("style_tags"),
+                    prompt="Style",
+                    value=self._filter_style,
+                    allow_blank=False,
+                    id="filter_style",
+                )
 
+            items = [
+                ListItem(Label(self._template_label(template)), id=f"tpl_{template['id']}")
+                for template in self._filtered_templates()
+            ]
             yield ListView(*items, id="template_list")
             yield Static("", id="template_desc")
             
@@ -63,12 +87,80 @@ class TemplateScreen(Screen):
         template_id = item_id.replace("tpl_", "")
         if template_id in self._template_lookup:
             self._selected_template_id = template_id
-            desc = self._template_lookup[template_id].get("description", "")
-            desc_widget = self.query_one("#template_desc", Static)
-            desc_widget.update(desc)
+            self._update_description(template_id)
 
     def on_mount(self) -> None:
-        if self._selected_template_id in self._template_lookup:
-            desc = self._template_lookup[self._selected_template_id].get("description", "")
-            desc_widget = self.query_one("#template_desc", Static)
-            desc_widget.update(desc)
+        self._refresh_template_list(keep_selection=True)
+
+    def on_select_changed(self, event: Select.Changed) -> None:
+        if event.select.id == "filter_profile":
+            self._filter_profile = event.value
+        elif event.select.id == "filter_purpose":
+            self._filter_purpose = event.value
+        elif event.select.id == "filter_style":
+            self._filter_style = event.value
+        self._refresh_template_list(keep_selection=False)
+
+    def _build_filter_options(self, key: str) -> list[tuple[str, str]]:
+        values = set()
+        for template in self._templates:
+            if key == "screen_profile":
+                value = template.get("screen_profile")
+                if value:
+                    values.add(value)
+            else:
+                for tag in template.get(key, []):
+                    values.add(tag)
+        options = [("All", "all")]
+        for value in sorted(values):
+            label = str(value).replace("_", " ").title()
+            options.append((label, str(value)))
+        return options
+
+    def _filtered_templates(self) -> list:
+        result = []
+        for template in self._templates:
+            if self._filter_profile != "all" and template.get("screen_profile") != self._filter_profile:
+                continue
+            if self._filter_purpose != "all" and self._filter_purpose not in template.get("purpose_tags", []):
+                continue
+            if self._filter_style != "all" and self._filter_style not in template.get("style_tags", []):
+                continue
+            result.append(template)
+        return result
+
+    def _template_label(self, template: dict) -> str:
+        purpose = "/".join(template.get("purpose_tags", []))
+        style = "/".join(template.get("style_tags", []))
+        return f"{template['name']} · {template['screen_profile']} · {purpose} · {style}"
+
+    def _refresh_template_list(self, keep_selection: bool = True) -> None:
+        list_view = self.query_one("#template_list", ListView)
+        templates = self._filtered_templates()
+        list_view.clear()
+        selected_index = None
+        for index, template in enumerate(templates):
+            item = ListItem(Label(self._template_label(template)), id=f"tpl_{template['id']}")
+            list_view.append(item)
+            if keep_selection and template.get("id") == self._selected_template_id:
+                selected_index = index
+        if templates and selected_index is None:
+            self._selected_template_id = templates[0]["id"]
+            selected_index = 0
+        if selected_index is not None:
+            list_view.index = selected_index
+            self._update_description(self._selected_template_id)
+        else:
+            self._selected_template_id = None
+            self.query_one("#template_desc", Static).update("No templates match the current filters.")
+
+    def _update_description(self, template_id: str) -> None:
+        template = self._template_lookup.get(template_id, {})
+        desc = template.get("description", "")
+        resolution = template.get("recommended_resolution", "-")
+        profile = template.get("screen_profile", "-")
+        purpose = ", ".join(template.get("purpose_tags", []))
+        style = ", ".join(template.get("style_tags", []))
+        detail = f"{desc}\nProfile: {profile} · Resolution: {resolution}\nPurpose: {purpose} · Style: {style}"
+        desc_widget = self.query_one("#template_desc", Static)
+        desc_widget.update(detail)

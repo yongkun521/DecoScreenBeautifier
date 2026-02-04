@@ -45,6 +45,14 @@ class HardwareMonitor(BaseWidget):
         """渲染组件内容"""
         table = Table.grid(expand=True)
         table.add_column(justify="left")
+
+        cpu_ok = self.get_style_color("cpu_ok", "green")
+        cpu_warn = self.get_style_color("cpu_warn", "yellow")
+        cpu_crit = self.get_style_color("cpu_crit", "red")
+        mem_color = self.get_style_color("mem", "cyan")
+        swap_color = self.get_style_color("swap", "magenta")
+        panel_cpu = self.get_style_color("panel_cpu", cpu_ok)
+        panel_mem = self.get_style_color("panel_mem", "blue")
         
         # 1. CPU 核心状态
         cpu_grid = Table.grid(padding=(0, 1))
@@ -53,12 +61,13 @@ class HardwareMonitor(BaseWidget):
         
         for i, percent in enumerate(cpu_percents):
             if i >= 8: break # 最多显示 8 个核心，防止溢出
-            bar = self._make_cyber_bar(percent, width=12, color="green" if percent < 70 else "yellow" if percent < 90 else "red")
+            bar_color = cpu_ok if percent < 70 else cpu_warn if percent < 90 else cpu_crit
+            bar = self._make_cyber_bar(percent, width=12, color=bar_color)
             cpu_grid.add_row(f"CORE {i:02d}", bar)
             
         # 2. 内存与 Swap
-        mem_bar = self._make_cyber_bar(mem.percent, width=25, color="cyan")
-        swap_bar = self._make_cyber_bar(swap.percent, width=25, color="magenta")
+        mem_bar = self._make_cyber_bar(mem.percent, width=25, color=mem_color)
+        swap_bar = self._make_cyber_bar(swap.percent, width=25, color=swap_color)
         
         # 3. 整合布局
         main_table = Table.grid(padding=1)
@@ -67,16 +76,16 @@ class HardwareMonitor(BaseWidget):
         
         # 左侧核心列表
         main_table.add_row(
-            Panel(cpu_grid, title="[CPU CORES]", border_style="green"),
+            Panel(cpu_grid, title="[CPU CORES]", border_style=panel_cpu),
             Panel(
                 Text.assemble(
-                    ("MEMORY USAGE\n", "bold cyan"),
+                    ("MEMORY USAGE\n", f"bold {mem_color}"),
                     mem_bar, f" {mem.percent}%\n\n",
-                    ("SWAP USAGE\n", "bold magenta"),
+                    ("SWAP USAGE\n", f"bold {swap_color}"),
                     swap_bar, f" {swap.percent}%"
                 ),
                 title="[MEMORY/SWAP]",
-                border_style="blue"
+                border_style=panel_mem
             )
         )
         
@@ -117,4 +126,5 @@ class HardwareMonitor(BaseWidget):
         for val in history:
             idx = int((val / 100) * (len(chars) - 1))
             line += chars[idx]
-        return Text(line, style="bold yellow")
+        trend_color = self.get_style_color("accent", "yellow")
+        return Text(line, style=f"bold {trend_color}")
