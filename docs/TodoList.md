@@ -129,6 +129,7 @@
     - [ ] 使用 PyInstaller 打包为独立 EXE 文件
     - [x] 草稿版单文件打包验证（默认图标）
     - [x] dist 打包产物加入 gitignore
+    - [x] build 打包缓存加入 gitignore 并从版本库移除
     - [ ] 发布 Release v1.0
 
 ---
