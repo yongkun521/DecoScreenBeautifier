@@ -34,6 +34,19 @@ class ConfigManager:
         self._ensure_dirs()
         
         # 默认配置
+        terminal_defaults = {
+            "enabled": False,
+            "backend": "windows_terminal",
+            "focus_mode": True,
+            "fullscreen": False,
+            "maximized": False,
+            "window_target": "new",
+            "profile": "",
+            "title": "DecoScreenBeautifier",
+            "starting_directory": "",
+            "position": "",
+            "size": "",
+        }
         self.settings = {
             "fps_limit": 30,
             "theme": "cyberpunk",
@@ -42,6 +55,7 @@ class ConfigManager:
             "font_preset": DEFAULT_FONT_PRESET_ID,
             "style_preset": DEFAULT_STYLE_PRESET_ID,
             "global_scale": 1.0,
+            "terminal_integration": terminal_defaults,
         }
         self.current_template = self.settings["template_id"]
 
@@ -68,6 +82,25 @@ class ConfigManager:
         self.settings.setdefault("font_preset", DEFAULT_FONT_PRESET_ID)
         self.settings.setdefault("style_preset", DEFAULT_STYLE_PRESET_ID)
         self.settings.setdefault("global_scale", 1.0)
+        terminal_settings = self.settings.get("terminal_integration")
+        if not isinstance(terminal_settings, dict):
+            terminal_settings = {}
+            self.settings["terminal_integration"] = terminal_settings
+        terminal_defaults = {
+            "enabled": False,
+            "backend": "windows_terminal",
+            "focus_mode": True,
+            "fullscreen": False,
+            "maximized": False,
+            "window_target": "new",
+            "profile": "",
+            "title": "DecoScreenBeautifier",
+            "starting_directory": "",
+            "position": "",
+            "size": "",
+        }
+        for key, value in terminal_defaults.items():
+            terminal_settings.setdefault(key, value)
         self.current_template = self.settings.get("template_id", DEFAULT_TEMPLATE_ID)
 
     def save_settings(self):

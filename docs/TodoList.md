@@ -123,6 +123,10 @@
 - [ ] **系统集成**
     - [x] Windows 开机自启动功能 (Registry / Startup Folder)
     - [x] 启动时依赖检查与缺失提示
+    - [~] Windows Terminal 集成与无框模式尝试
+        - [x] 添加 Windows Terminal 自动启动逻辑（可配置）
+        - [x] 增加配置说明与使用文档
+        - [ ] 评估/验证 Windows Terminal 二次开发或内置打包可行性
     - [ ] 系统托盘图标 (System Tray) 支持 (最小化/退出/切换配置)
 - [ ] **文档与构建**
     - [ ] 编写用户使用手册
@@ -130,6 +134,7 @@
     - [x] 草稿版单文件打包验证（默认图标）
     - [x] dist 打包产物加入 gitignore
     - [x] build 打包缓存加入 gitignore 并从版本库移除
+    - [x] 使用 git-filter-repo 清理 build 历史（待强推）
     - [ ] 发布 Release v1.0
 
 ---

@@ -88,9 +88,26 @@ def _ensure_dependencies() -> None:
     )
     raise SystemExit(1)
 
+def _maybe_launch_windows_terminal() -> bool:
+    try:
+        from config.manager import ConfigManager
+        from utils.terminal_launcher import maybe_launch_in_windows_terminal
+    except Exception:
+        return False
+
+    try:
+        config_manager = ConfigManager()
+        config_manager.load_settings()
+    except Exception:
+        return False
+
+    return maybe_launch_in_windows_terminal(config_manager.settings, sys.argv)
+
 def main():
     """应用程序入口点"""
     _ensure_dependencies()
+    if _maybe_launch_windows_terminal():
+        return
     from ui.app import DecoScreenApp
 
     app = DecoScreenApp()
