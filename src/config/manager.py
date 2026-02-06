@@ -51,6 +51,9 @@ class ConfigManager:
             "deco_topmost": False,
             "deco_position": "",
             "deco_size": "",
+            "deco_auto_fit": True,
+            "deco_monitor": "auto",
+            "deco_use_work_area": False,
         }
         self.settings = {
             "fps_limit": 30,
@@ -108,6 +111,9 @@ class ConfigManager:
             "deco_topmost": False,
             "deco_position": "",
             "deco_size": "",
+            "deco_auto_fit": True,
+            "deco_monitor": "auto",
+            "deco_use_work_area": False,
         }
         for key, value in terminal_defaults.items():
             terminal_settings.setdefault(key, value)

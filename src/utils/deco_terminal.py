@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+from dataclasses import dataclass
 from typing import Any, Mapping, Optional, Tuple
 
 if os.name == "nt":
@@ -27,6 +28,21 @@ if os.name == "nt":
         ctypes.c_uint,
     ]
     _user32.SetWindowPos.restype = wintypes.BOOL
+    _user32.EnumDisplayMonitors.argtypes = [
+        wintypes.HDC,
+        ctypes.POINTER(wintypes.RECT),
+        ctypes.WINFUNCTYPE(
+            wintypes.BOOL,
+            wintypes.HMONITOR,
+            wintypes.HDC,
+            ctypes.POINTER(wintypes.RECT),
+            wintypes.LPARAM,
+        ),
+        wintypes.LPARAM,
+    ]
+    _user32.EnumDisplayMonitors.restype = wintypes.BOOL
+    _user32.GetMonitorInfoW.argtypes = [wintypes.HMONITOR, ctypes.c_void_p]
+    _user32.GetMonitorInfoW.restype = wintypes.BOOL
 
     GWL_STYLE = -16
 
@@ -43,6 +59,49 @@ if os.name == "nt":
 
     HWND_TOPMOST = wintypes.HWND(-1)
     HWND_NOTOPMOST = wintypes.HWND(-2)
+
+    MONITORINFOF_PRIMARY = 0x00000001
+
+    class _MONITORINFOEXW(ctypes.Structure):
+        _fields_ = [
+            ("cbSize", wintypes.DWORD),
+            ("rcMonitor", wintypes.RECT),
+            ("rcWork", wintypes.RECT),
+            ("dwFlags", wintypes.DWORD),
+            ("szDevice", wintypes.WCHAR * 32),
+        ]
+
+
+@dataclass(frozen=True)
+class _MonitorInfo:
+    index: int
+    handle: int
+    left: int
+    top: int
+    right: int
+    bottom: int
+    work_left: int
+    work_top: int
+    work_right: int
+    work_bottom: int
+    is_primary: bool
+    device: str
+
+    @property
+    def width(self) -> int:
+        return self.right - self.left
+
+    @property
+    def height(self) -> int:
+        return self.bottom - self.top
+
+    @property
+    def work_width(self) -> int:
+        return self.work_right - self.work_left
+
+    @property
+    def work_height(self) -> int:
+        return self.work_bottom - self.work_top
 
 
 def _normalize_settings(settings: Any) -> dict:
@@ -63,6 +122,123 @@ def _parse_pair(value: str) -> Optional[Tuple[int, int]]:
         return int(parts[0]), int(parts[1])
     except ValueError:
         return None
+
+
+def _is_auto(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str) and value.strip().lower() in {"auto", "screen", "monitor"}:
+        return True
+    return False
+
+
+def _parse_monitor_index(value: Any) -> Optional[int]:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        text = value.strip()
+        if text.isdigit():
+            try:
+                return int(text)
+            except ValueError:
+                return None
+    return None
+
+
+def _list_monitors() -> list[_MonitorInfo]:
+    if os.name != "nt":
+        return []
+    monitors: list[_MonitorInfo] = []
+
+    def _callback(hmonitor, hdc, lprect, lparam) -> int:
+        info = _MONITORINFOEXW()
+        info.cbSize = ctypes.sizeof(_MONITORINFOEXW)
+        if not _user32.GetMonitorInfoW(hmonitor, ctypes.byref(info)):
+            return 1
+        monitors.append(
+            _MonitorInfo(
+                index=len(monitors),
+                handle=int(hmonitor),
+                left=info.rcMonitor.left,
+                top=info.rcMonitor.top,
+                right=info.rcMonitor.right,
+                bottom=info.rcMonitor.bottom,
+                work_left=info.rcWork.left,
+                work_top=info.rcWork.top,
+                work_right=info.rcWork.right,
+                work_bottom=info.rcWork.bottom,
+                is_primary=bool(info.dwFlags & MONITORINFOF_PRIMARY),
+                device=info.szDevice,
+            )
+        )
+        return 1
+
+    callback = ctypes.WINFUNCTYPE(
+        wintypes.BOOL,
+        wintypes.HMONITOR,
+        wintypes.HDC,
+        ctypes.POINTER(wintypes.RECT),
+        wintypes.LPARAM,
+    )(_callback)
+    _user32.EnumDisplayMonitors(0, 0, callback, 0)
+    return monitors
+
+
+def _select_monitor(
+    settings: Mapping[str, Any], monitors: list[_MonitorInfo]
+) -> Optional[_MonitorInfo]:
+    if not monitors:
+        return None
+    primary = next((m for m in monitors if m.is_primary), monitors[0])
+    target = settings.get("deco_monitor")
+    if target is None or target == "":
+        target = "auto"
+    if isinstance(target, str):
+        target_value = target.strip().lower()
+        if target_value in {"primary", "main"}:
+            return primary
+        if target_value in {"secondary", "second", "external"}:
+            non_primary = [m for m in monitors if not m.is_primary]
+            if non_primary:
+                return max(non_primary, key=lambda m: m.width * m.height)
+            return primary
+        if target_value in {"auto"}:
+            non_primary = [m for m in monitors if not m.is_primary]
+            if non_primary:
+                return max(non_primary, key=lambda m: m.width * m.height)
+            return primary
+        index = _parse_monitor_index(target_value)
+        if index is not None and 0 <= index < len(monitors):
+            return monitors[index]
+    index = _parse_monitor_index(target)
+    if index is not None and 0 <= index < len(monitors):
+        return monitors[index]
+    return primary
+
+
+def _auto_monitor_rect(
+    settings: Mapping[str, Any],
+) -> Optional[Tuple[Tuple[int, int], Tuple[int, int]]]:
+    monitors = _list_monitors()
+    monitor = _select_monitor(settings, monitors)
+    if not monitor:
+        return None
+    use_work_area = bool(settings.get("deco_use_work_area"))
+    if use_work_area:
+        left, top, right, bottom = (
+            monitor.work_left,
+            monitor.work_top,
+            monitor.work_right,
+            monitor.work_bottom,
+        )
+    else:
+        left, top, right, bottom = (
+            monitor.left,
+            monitor.top,
+            monitor.right,
+            monitor.bottom,
+        )
+    return (left, top), (right - left, bottom - top)
 
 
 def apply_deco_terminal_mode(terminal_settings: Mapping[str, Any]) -> bool:
@@ -102,8 +278,19 @@ def apply_deco_terminal_mode(terminal_settings: Mapping[str, Any]) -> bool:
             SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED,
         )
 
-    pos = _parse_pair(settings.get("deco_position", ""))
-    size = _parse_pair(settings.get("deco_size", ""))
+    raw_pos = settings.get("deco_position", "")
+    raw_size = settings.get("deco_size", "")
+    pos = None if _is_auto(raw_pos) else _parse_pair(raw_pos)
+    size = None if _is_auto(raw_size) else _parse_pair(raw_size)
+    auto_fit = settings.get("deco_auto_fit", True)
+    if auto_fit and (pos is None or size is None):
+        auto_rect = _auto_monitor_rect(settings)
+        if auto_rect:
+            auto_pos, auto_size = auto_rect
+            if pos is None:
+                pos = auto_pos
+            if size is None:
+                size = auto_size
     if pos or size:
         x, y = pos if pos else (0, 0)
         width, height = size if size else (0, 0)
