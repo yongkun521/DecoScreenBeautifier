@@ -129,6 +129,10 @@
         - [x] 添加 Windows Terminal 自动启动逻辑（可配置）
         - [x] 增加配置说明与使用文档
         - [ ] 评估/验证 Windows Terminal 二次开发或内置打包可行性
+    - [ ] GUI 宿主（方案B：自带渲染，不依赖外部终端）
+        - [x] 设计文档（docs/方案B_GUI自带渲染_设计文档.md）
+        - [ ] MVP：窗口/渲染/布局/特效管线
+        - [ ] 打包：GUI 默认入口 EXE
     - [~] Deco-Terminal（自研终端外壳）
     - [x] 后端选择与回退策略
     - [x] conhost 无边框基础处理（Win32）

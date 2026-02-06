@@ -18,6 +18,13 @@ if os.name == "nt":
     _user32.GetWindowLongW.restype = ctypes.c_long
     _user32.SetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int, ctypes.c_long]
     _user32.SetWindowLongW.restype = ctypes.c_long
+    _user32.GetForegroundWindow.argtypes = []
+    _user32.GetForegroundWindow.restype = wintypes.HWND
+    _user32.GetWindowThreadProcessId.argtypes = [
+        wintypes.HWND,
+        ctypes.POINTER(wintypes.DWORD),
+    ]
+    _user32.GetWindowThreadProcessId.restype = wintypes.DWORD
     _user32.SetWindowPos.argtypes = [
         wintypes.HWND,
         wintypes.HWND,
@@ -45,12 +52,20 @@ if os.name == "nt":
     _user32.GetMonitorInfoW.restype = wintypes.BOOL
 
     GWL_STYLE = -16
+    GWL_EXSTYLE = -20
 
     WS_CAPTION = 0x00C00000
     WS_THICKFRAME = 0x00040000
     WS_MINIMIZEBOX = 0x00020000
     WS_MAXIMIZEBOX = 0x00010000
     WS_SYSMENU = 0x00080000
+    WS_BORDER = 0x00800000
+    WS_DLGFRAME = 0x00400000
+
+    WS_EX_DLGMODALFRAME = 0x00000001
+    WS_EX_WINDOWEDGE = 0x00000100
+    WS_EX_CLIENTEDGE = 0x00000200
+    WS_EX_STATICEDGE = 0x00020000
 
     SWP_NOSIZE = 0x0001
     SWP_NOMOVE = 0x0002
@@ -263,11 +278,29 @@ def _auto_monitor_rect(
     return (left, top), (right - left, bottom - top)
 
 
+def _foreground_terminal_hwnd() -> Optional[int]:
+    if os.name != "nt":
+        return None
+    hwnd = _user32.GetForegroundWindow()
+    if not hwnd:
+        return None
+    try:
+        pid = wintypes.DWORD()
+        _user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if not pid.value:
+            return None
+        import psutil
+
+        proc_name = psutil.Process(pid.value).name().lower()
+    except Exception:
+        return None
+    if proc_name in {"windowsterminal.exe", "wt.exe"}:
+        return int(hwnd)
+    return None
+
+
 def apply_deco_terminal_mode(terminal_settings: Mapping[str, Any]) -> bool:
     if os.name != "nt":
-        return False
-    if os.environ.get("WT_SESSION"):
-        sys.stderr.write("Deco-terminal is not supported inside Windows Terminal.\n")
         return False
 
     settings = _normalize_settings(terminal_settings)
@@ -276,16 +309,35 @@ def apply_deco_terminal_mode(terminal_settings: Mapping[str, Any]) -> bool:
 
     hwnd = _kernel32.GetConsoleWindow()
     if not hwnd:
-        return False
+        if os.environ.get("WT_SESSION"):
+            hwnd = _foreground_terminal_hwnd()
+        if not hwnd:
+            sys.stderr.write("Deco-terminal is not supported inside Windows Terminal.\n")
+            return False
 
     borderless = settings.get("deco_borderless", True)
     if borderless:
         style = _user32.GetWindowLongW(hwnd, GWL_STYLE)
         new_style = style & ~(
-            WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU
+            WS_CAPTION
+            | WS_THICKFRAME
+            | WS_MINIMIZEBOX
+            | WS_MAXIMIZEBOX
+            | WS_SYSMENU
+            | WS_BORDER
+            | WS_DLGFRAME
         )
         if new_style != style:
             _user32.SetWindowLongW(hwnd, GWL_STYLE, new_style)
+        ex_style = _user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+        new_ex_style = ex_style & ~(
+            WS_EX_DLGMODALFRAME
+            | WS_EX_WINDOWEDGE
+            | WS_EX_CLIENTEDGE
+            | WS_EX_STATICEDGE
+        )
+        if new_ex_style != ex_style:
+            _user32.SetWindowLongW(hwnd, GWL_EXSTYLE, new_ex_style)
 
     topmost = settings.get("deco_topmost")
     if topmost is not None:
