@@ -40,9 +40,10 @@
 - [x] 打包与启动器（EXE / 便携版）
 
 ## 实用化补充
-- 性能监控：在 `settings.json5` 中配置 `performance_monitor`（启用/采样间隔/日志路径）。
-- 兼容性报告：运行 `python scripts/compat_report.py` 生成系统与 DPI 报告。
-- 打包脚本：`scripts/build_exe.ps1` 与 `scripts/build_portable.ps1`。
+- [x] 性能监控：在 `settings.json5` 中配置 `performance_monitor`（启用/采样间隔/日志路径）。
+- [x] 兼容性报告：运行 `python scripts/compat_report.py` 生成系统与 DPI 报告。
+- [x] 打包脚本：`scripts/build_exe.ps1` 与 `scripts/build_portable.ps1`。
+- [x] 说明文档：见 `docs/DecoTerminal_实用化补充.md`。
 
 ## 备注
 - Deco-Terminal 仅做“美化宿主”，不追求完整终端功能。

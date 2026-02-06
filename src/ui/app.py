@@ -1,5 +1,6 @@
 import sys
 import os
+from pathlib import Path
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer
 
@@ -51,7 +52,9 @@ class DecoScreenApp(App):
             return
         interval = settings.get("sample_interval", 1.0)
         log_path = settings.get("log_path")
-        if not log_path:
+        if log_path:
+            log_path = self._resolve_perf_log_path(log_path)
+        else:
             perf_dir = self.config_manager.data_dir / "perf"
             perf_dir.mkdir(parents=True, exist_ok=True)
             log_path = str(perf_dir / "perf.jsonl")
@@ -67,6 +70,19 @@ class DecoScreenApp(App):
             self.performance_monitor.start()
         except Exception as exc:
             sys.stderr.write(f"Failed to start performance monitor: {exc}\n")
+
+    def _resolve_perf_log_path(self, log_path: str) -> str:
+        path = Path(str(log_path)).expanduser()
+        if not path.is_absolute():
+            path = self.config_manager.data_dir / path
+        return str(path.resolve())
+
+    def on_shutdown(self) -> None:
+        if self.performance_monitor:
+            try:
+                self.performance_monitor.stop()
+            except Exception:
+                pass
 
     def _refresh_visual_settings(self) -> None:
         self.visual_preset = get_font_preset(self.config_manager.settings.get("font_preset"))

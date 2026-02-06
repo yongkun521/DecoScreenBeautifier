@@ -140,6 +140,7 @@
     - [ ] 编写用户使用手册
     - [~] 使用 PyInstaller 打包为独立 EXE 文件
     - [x] 构建脚本（build_exe.ps1 / build_portable.ps1）
+    - [x] 实用化补充说明（性能监控配置 / 兼容性报告 / 打包脚本）
     - [x] 草稿版单文件打包验证（默认图标）
     - [x] dist 打包产物加入 gitignore
     - [x] build 打包缓存加入 gitignore 并从版本库移除
