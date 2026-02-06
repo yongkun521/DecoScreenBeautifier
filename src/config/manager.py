@@ -34,6 +34,34 @@ class ConfigManager:
         self._ensure_dirs()
         
         # 默认配置
+        deco_effects_defaults = {
+            "enabled": True,
+            "scanlines": {
+                "enabled": True,
+                "spacing": 2,
+                "intensity": 0.15,
+                "speed": 1,
+                "mode": "darken",
+            },
+            "glow": {
+                "enabled": True,
+                "intensity": 0.35,
+                "radius": 1,
+                "halo_alpha": 0.35,
+            },
+            "noise": {
+                "enabled": True,
+                "density": 0.02,
+                "chars": " .`,",
+                "color": "",
+                "on_text": False,
+            },
+            "warp": {
+                "enabled": True,
+                "strength": 1,
+                "probability": 0.12,
+            },
+        }
         terminal_defaults = {
             "enabled": False,
             "backend": "windows_terminal",
@@ -54,6 +82,7 @@ class ConfigManager:
             "deco_auto_fit": True,
             "deco_monitor": "auto",
             "deco_use_work_area": False,
+            "deco_effects": deco_effects_defaults,
         }
         self.settings = {
             "fps_limit": 30,
@@ -94,6 +123,34 @@ class ConfigManager:
         if not isinstance(terminal_settings, dict):
             terminal_settings = {}
             self.settings["terminal_integration"] = terminal_settings
+        deco_effects_defaults = {
+            "enabled": True,
+            "scanlines": {
+                "enabled": True,
+                "spacing": 2,
+                "intensity": 0.15,
+                "speed": 1,
+                "mode": "darken",
+            },
+            "glow": {
+                "enabled": True,
+                "intensity": 0.35,
+                "radius": 1,
+                "halo_alpha": 0.35,
+            },
+            "noise": {
+                "enabled": True,
+                "density": 0.02,
+                "chars": " .`,",
+                "color": "",
+                "on_text": False,
+            },
+            "warp": {
+                "enabled": True,
+                "strength": 1,
+                "probability": 0.12,
+            },
+        }
         terminal_defaults = {
             "enabled": False,
             "backend": "windows_terminal",
@@ -114,9 +171,24 @@ class ConfigManager:
             "deco_auto_fit": True,
             "deco_monitor": "auto",
             "deco_use_work_area": False,
+            "deco_effects": deco_effects_defaults,
         }
         for key, value in terminal_defaults.items():
             terminal_settings.setdefault(key, value)
+        deco_effects = terminal_settings.get("deco_effects")
+        if not isinstance(deco_effects, dict):
+            deco_effects = {}
+            terminal_settings["deco_effects"] = deco_effects
+        for key, value in deco_effects_defaults.items():
+            if isinstance(value, dict):
+                section = deco_effects.get(key)
+                if not isinstance(section, dict):
+                    section = {}
+                    deco_effects[key] = section
+                for sub_key, sub_value in value.items():
+                    section.setdefault(sub_key, sub_value)
+            else:
+                deco_effects.setdefault(key, value)
         self.current_template = self.settings.get("template_id", DEFAULT_TEMPLATE_ID)
 
     def save_settings(self):
