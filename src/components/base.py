@@ -104,6 +104,12 @@ class BaseWidget(Static):
         if interval > 0:
             self._timer = self.set_interval(interval, self.update_content)
 
+    def export_render_grid(self, width: int, height: int):
+        """将当前组件内容转换为渲染网格数据"""
+        from core.renderer import render_textual_widget
+
+        return render_textual_widget(self, width, height)
+
     def on_click(self) -> None:
         """处理点击事件（为后续编辑功能预留）"""
         pass
