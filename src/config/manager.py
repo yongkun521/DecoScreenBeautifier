@@ -37,6 +37,7 @@ class ConfigManager:
         terminal_defaults = {
             "enabled": False,
             "backend": "windows_terminal",
+            "fallback_backend": "classic",
             "focus_mode": True,
             "fullscreen": False,
             "maximized": False,
@@ -46,6 +47,10 @@ class ConfigManager:
             "starting_directory": "",
             "position": "",
             "size": "",
+            "deco_borderless": True,
+            "deco_topmost": False,
+            "deco_position": "",
+            "deco_size": "",
         }
         self.settings = {
             "fps_limit": 30,
@@ -89,6 +94,7 @@ class ConfigManager:
         terminal_defaults = {
             "enabled": False,
             "backend": "windows_terminal",
+            "fallback_backend": "classic",
             "focus_mode": True,
             "fullscreen": False,
             "maximized": False,
@@ -98,6 +104,10 @@ class ConfigManager:
             "starting_directory": "",
             "position": "",
             "size": "",
+            "deco_borderless": True,
+            "deco_topmost": False,
+            "deco_position": "",
+            "deco_size": "",
         }
         for key, value in terminal_defaults.items():
             terminal_settings.setdefault(key, value)

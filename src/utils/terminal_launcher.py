@@ -91,7 +91,7 @@ def _build_wt_command(
 
 
 def maybe_launch_in_windows_terminal(
-    settings: Mapping[str, Any], argv: Iterable[str]
+    terminal_settings: Mapping[str, Any], argv: Iterable[str]
 ) -> bool:
     if not _is_windows():
         return False
@@ -100,10 +100,8 @@ def maybe_launch_in_windows_terminal(
     if os.environ.get("DSB_DISABLE_WT"):
         return False
 
-    terminal_settings = _normalize_settings(settings.get("terminal_integration"))
+    terminal_settings = _normalize_settings(terminal_settings)
     if not terminal_settings or not terminal_settings.get("enabled"):
-        return False
-    if terminal_settings.get("backend", "windows_terminal") != "windows_terminal":
         return False
 
     wt_exe = _find_wt_executable()
@@ -120,3 +118,28 @@ def maybe_launch_in_windows_terminal(
         sys.stderr.write(f"Failed to launch Windows Terminal: {exc}\n")
         return False
     return True
+
+
+def maybe_prepare_terminal(settings: Mapping[str, Any], argv: Iterable[str]) -> bool:
+    terminal_settings = _normalize_settings(settings.get("terminal_integration"))
+    if not terminal_settings or not terminal_settings.get("enabled"):
+        return False
+
+    backend = terminal_settings.get("backend", "windows_terminal")
+    if backend == "windows_terminal":
+        return maybe_launch_in_windows_terminal(terminal_settings, argv)
+    if backend == "deco_terminal":
+        try:
+            from utils.deco_terminal import apply_deco_terminal_mode
+        except Exception as exc:
+            sys.stderr.write(f"Deco-terminal unavailable: {exc}\n")
+            apply_ok = False
+        else:
+            apply_ok = apply_deco_terminal_mode(terminal_settings)
+        if apply_ok:
+            return False
+        fallback = terminal_settings.get("fallback_backend", "classic")
+        if fallback == "windows_terminal":
+            return maybe_launch_in_windows_terminal(terminal_settings, argv)
+        return False
+    return False
