@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 import json5
 import appdirs
 from pathlib import Path
@@ -84,6 +85,20 @@ class ConfigManager:
             "deco_use_work_area": False,
             "deco_effects": deco_effects_defaults,
         }
+        gui_host_defaults = {
+            "enabled": True,
+            "monitor": "auto",
+            "use_work_area": True,
+            "borderless": True,
+            "always_on_top": False,
+            "size_px": "",
+            "pos_px": "",
+            "fps": 60,
+            "font_face": "Cascadia Mono",
+            "font_size": 14,
+            "cell_aspect": 1.0,
+            "effects": deepcopy(deco_effects_defaults),
+        }
         performance_defaults = {
             "enabled": False,
             "sample_interval": 1.0,
@@ -99,6 +114,7 @@ class ConfigManager:
             "global_scale": 1.0,
             "performance_monitor": performance_defaults,
             "terminal_integration": terminal_defaults,
+            "gui_host": gui_host_defaults,
         }
         self.current_template = self.settings["template_id"]
 
@@ -195,6 +211,52 @@ class ConfigManager:
                     section.setdefault(sub_key, sub_value)
             else:
                 deco_effects.setdefault(key, value)
+        gui_defaults = {
+            "enabled": True,
+            "monitor": "auto",
+            "use_work_area": True,
+            "borderless": True,
+            "always_on_top": False,
+            "size_px": "",
+            "pos_px": "",
+            "fps": 60,
+            "font_face": "Cascadia Mono",
+            "font_size": 14,
+            "cell_aspect": 1.0,
+            "effects": deepcopy(deco_effects_defaults),
+        }
+        gui_settings = self.settings.get("gui_host")
+        if not isinstance(gui_settings, dict):
+            gui_settings = {}
+            self.settings["gui_host"] = gui_settings
+        for key, value in gui_defaults.items():
+            gui_settings.setdefault(key, value)
+        gui_effects = gui_settings.get("effects")
+        if not isinstance(gui_effects, dict):
+            gui_effects = {}
+            gui_settings["effects"] = gui_effects
+        for key, value in deco_effects_defaults.items():
+            if isinstance(value, dict):
+                section = gui_effects.get(key)
+                if not isinstance(section, dict):
+                    section = {}
+                    gui_effects[key] = section
+                for sub_key, sub_value in value.items():
+                    section.setdefault(sub_key, sub_value)
+            else:
+                gui_effects.setdefault(key, value)
+        if gui_settings.get("monitor") in {None, ""}:
+            gui_settings["monitor"] = terminal_settings.get("deco_monitor", "auto")
+        if gui_settings.get("use_work_area") in {None, ""}:
+            gui_settings["use_work_area"] = terminal_settings.get("deco_use_work_area", True)
+        if gui_settings.get("borderless") in {None, ""}:
+            gui_settings["borderless"] = terminal_settings.get("deco_borderless", True)
+        if gui_settings.get("always_on_top") in {None, ""}:
+            gui_settings["always_on_top"] = terminal_settings.get("deco_topmost", False)
+        if gui_settings.get("pos_px") in {None, ""}:
+            gui_settings["pos_px"] = terminal_settings.get("deco_position", "")
+        if gui_settings.get("size_px") in {None, ""}:
+            gui_settings["size_px"] = terminal_settings.get("deco_size", "")
         performance_defaults = {
             "enabled": False,
             "sample_interval": 1.0,
@@ -281,8 +343,8 @@ class ConfigManager:
             "name": "Default Layout",
             "grid_size": {"rows": 2, "cols": 4},
             "components": [
-                {"id": "hardware", "type": "HardwareMonitor", "pos": [0, 0, 1, 2]},
-                {"id": "clock", "type": "ClockWidget", "pos": [0, 2, 1, 2]},
-                {"id": "audio", "type": "AudioVisualizer", "pos": [1, 0, 1, 4]}
+                {"id": "p_hardware", "type": "HardwareMonitor", "pos": [0, 0, 2, 1]},
+                {"id": "p_network", "type": "NetworkMonitor", "pos": [0, 1, 2, 1]},
+                {"id": "p_clock", "type": "ClockWidget", "pos": [2, 0, 2, 2]},
             ]
         }

@@ -10,16 +10,16 @@
 ### 0.1 MVP（可运行 GUI 宿主）
 
 - [x] 设计文档：本文件（将实现任务拆解为可执行待办）
-- [ ] 依赖：在 venv 安装/锁定 PySide6（记录版本与安装方式）
-- [ ] 入口：新增 `src/main_gui.py` 作为 GUI 默认入口（双击可运行）
-- [ ] 配置：在 `src/config/manager.py` 增加 `gui_host` 默认项，并兼容旧配置
-- [ ] 目录：新增 `src/gui_host/`（app/window/surface/scene/layout/input/errors）
-- [ ] 目录：新增 `src/gui_components/`（base + 2~3 个 MVP 组件）
-- [ ] 渲染：实现 `RenderGrid -> QPainter` 绘制（行段合并，减少 per-cell draw）
-- [ ] 合成：实现 Scene 合成（layout -> subgrid -> main grid）并接入 `apply_retro_effects`
-- [ ] 多屏：实现 `monitor=auto/primary/secondary/index` 与 `use_work_area` 行为
-- [ ] 输入：实现 GUI 快捷键（`d/e/t/q`），至少 `q` 退出、其余可先占位
-- [ ] 打包：更新 PyInstaller 产物，输出 GUI EXE（无控制台）+ legacy EXE（保留终端）
+- [x] 依赖：在 venv 安装/锁定 PySide6（记录版本与安装方式：`.\venv\Scripts\python -m pip install PySide6`，版本 `6.10.2`，已在 `requirements.txt` 固定）
+- [x] 入口：新增 `src/main_gui.py` 作为 GUI 默认入口（双击可运行）
+- [x] 配置：在 `src/config/manager.py` 增加 `gui_host` 默认项，并兼容旧配置
+- [x] 目录：新增 `src/gui_host/`（app/window/surface/scene/layout/input/errors）
+- [x] 目录：新增 `src/gui_components/`（base + 2~3 个 MVP 组件）
+- [x] 渲染：实现 `RenderGrid -> QPainter` 绘制（行段合并，减少 per-cell draw）
+- [x] 合成：实现 Scene 合成（layout -> subgrid -> main grid）并接入 `apply_retro_effects`
+- [x] 多屏：实现 `monitor=auto/primary/secondary/index` 与 `use_work_area` 行为
+- [x] 输入：实现 GUI 快捷键（`d/e/t/q`），至少 `q` 退出、其余可先占位
+- [x] 打包：更新 PyInstaller 产物，输出 GUI EXE（无控制台）+ legacy EXE（保留终端）
 - [ ] 验收：按“10. 测试与验收”逐项通过（功能 + 性能）
 
 ### 0.2 V1（可用性增强）
@@ -226,7 +226,7 @@ MVP：复用现有网格特效：
 
 现有 `ConfigManager._get_default_layout()` 已给出网格布局描述：
 - `grid_size`: rows/cols
-- `components`: type + pos=[row, col, row_span, col_span]
+- `components`: type + pos=[col, row, col_span, row_span]（与编辑器布局数据一致）
 
 GUI Scene 可直接复用该布局模型：
 - 将窗口映射到“主字符网格”（例如 240x60）

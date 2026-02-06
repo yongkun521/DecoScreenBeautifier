@@ -4,7 +4,7 @@ block_cipher = None
 ICON_PATH = None
 
 a = Analysis(
-    ['src/main.py'],
+    ['src/main.py', 'src/main_gui.py'],
     pathex=[],
     binaries=[],
     datas=[
@@ -25,6 +25,7 @@ a = Analysis(
         'psutil',
         'json5',
         'appdirs',
+        'PySide6',
     ],
     hookspath=[],
     hooksconfig={},
@@ -37,13 +38,33 @@ a = Analysis(
 )
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
-exe = EXE(
+gui_exe = EXE(
     pyz,
-    a.scripts,
+    a.scripts[1],
     a.binaries,
     a.zipfiles,
     a.datas,
     name='DecoScreenBeautifier',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=False,
+    icon=ICON_PATH,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+
+legacy_exe = EXE(
+    pyz,
+    a.scripts[0],
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    name='DecoScreenBeautifier_legacy_terminal',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
