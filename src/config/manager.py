@@ -84,6 +84,11 @@ class ConfigManager:
             "deco_use_work_area": False,
             "deco_effects": deco_effects_defaults,
         }
+        performance_defaults = {
+            "enabled": False,
+            "sample_interval": 1.0,
+            "log_path": "",
+        }
         self.settings = {
             "fps_limit": 30,
             "theme": "cyberpunk",
@@ -92,6 +97,7 @@ class ConfigManager:
             "font_preset": DEFAULT_FONT_PRESET_ID,
             "style_preset": DEFAULT_STYLE_PRESET_ID,
             "global_scale": 1.0,
+            "performance_monitor": performance_defaults,
             "terminal_integration": terminal_defaults,
         }
         self.current_template = self.settings["template_id"]
@@ -189,6 +195,18 @@ class ConfigManager:
                     section.setdefault(sub_key, sub_value)
             else:
                 deco_effects.setdefault(key, value)
+        performance_defaults = {
+            "enabled": False,
+            "sample_interval": 1.0,
+            "log_path": "",
+        }
+        self.settings.setdefault("performance_monitor", performance_defaults)
+        perf_settings = self.settings.get("performance_monitor")
+        if not isinstance(perf_settings, dict):
+            perf_settings = {}
+            self.settings["performance_monitor"] = perf_settings
+        for key, value in performance_defaults.items():
+            perf_settings.setdefault(key, value)
         self.current_template = self.settings.get("template_id", DEFAULT_TEMPLATE_ID)
 
     def save_settings(self):

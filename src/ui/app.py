@@ -30,18 +30,43 @@ class DecoScreenApp(App):
         self.visual_preset = get_font_preset(None)
         self.style_preset = get_style_preset(None)
         self.global_scale = 1.0
+        self.performance_monitor = None
 
     def on_mount(self) -> None:
         """应用启动时挂载主屏幕"""
         # 加载配置
         self.config_manager.load_settings()
         self._refresh_visual_settings()
+        self._start_performance_monitor()
         
         # 应用设置 (示例)
         # fps = self.config_manager.settings.get("fps_limit", 30)
         
         self.display_screen = DisplayScreen()
         self.push_screen(self.display_screen)
+
+    def _start_performance_monitor(self) -> None:
+        settings = self.config_manager.settings.get("performance_monitor", {})
+        if not isinstance(settings, dict) or not settings.get("enabled"):
+            return
+        interval = settings.get("sample_interval", 1.0)
+        log_path = settings.get("log_path")
+        if not log_path:
+            perf_dir = self.config_manager.data_dir / "perf"
+            perf_dir.mkdir(parents=True, exist_ok=True)
+            log_path = str(perf_dir / "perf.jsonl")
+        try:
+            from utils.perf_monitor import PerformanceMonitor
+        except Exception as exc:
+            sys.stderr.write(f"Performance monitor unavailable: {exc}\n")
+            return
+        try:
+            self.performance_monitor = PerformanceMonitor(
+                self, interval=interval, log_path=log_path
+            )
+            self.performance_monitor.start()
+        except Exception as exc:
+            sys.stderr.write(f"Failed to start performance monitor: {exc}\n")
 
     def _refresh_visual_settings(self) -> None:
         self.visual_preset = get_font_preset(self.config_manager.settings.get("font_preset"))

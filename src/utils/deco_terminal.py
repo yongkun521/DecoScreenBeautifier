@@ -184,6 +184,28 @@ def _list_monitors() -> list[_MonitorInfo]:
     return monitors
 
 
+def list_monitors() -> list[dict[str, Any]]:
+    """Expose monitor info for diagnostics/reporting."""
+    monitors = _list_monitors()
+    return [
+        {
+            "index": monitor.index,
+            "device": monitor.device,
+            "is_primary": monitor.is_primary,
+            "bounds": [monitor.left, monitor.top, monitor.right, monitor.bottom],
+            "work_area": [
+                monitor.work_left,
+                monitor.work_top,
+                monitor.work_right,
+                monitor.work_bottom,
+            ],
+            "size": [monitor.width, monitor.height],
+            "work_size": [monitor.work_width, monitor.work_height],
+        }
+        for monitor in monitors
+    ]
+
+
 def _select_monitor(
     settings: Mapping[str, Any], monitors: list[_MonitorInfo]
 ) -> Optional[_MonitorInfo]:

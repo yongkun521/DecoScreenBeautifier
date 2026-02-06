@@ -101,7 +101,29 @@ def _prepare_terminal() -> bool:
     except Exception:
         return False
 
+    _apply_fps_limit(config_manager.settings)
     return maybe_prepare_terminal(config_manager.settings, sys.argv)
+
+
+def _apply_fps_limit(settings: dict) -> None:
+    fps_limit = settings.get("fps_limit")
+    try:
+        fps_value = int(fps_limit)
+    except (TypeError, ValueError):
+        return
+    if fps_value <= 0:
+        return
+    os.environ["TEXTUAL_FPS"] = str(fps_value)
+    try:
+        import textual.constants as textual_constants
+        import textual.screen as textual_screen
+    except Exception:
+        return
+    textual_constants.MAX_FPS = fps_value
+    try:
+        textual_screen.UPDATE_PERIOD = 1 / fps_value
+    except Exception:
+        return
 
 def main():
     """应用程序入口点"""

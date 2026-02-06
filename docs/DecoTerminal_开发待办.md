@@ -35,9 +35,14 @@
 - [x] 噪点/抖动/轻微畸变
 
 ### M4：实用化与发布
-- [ ] 性能评估与优化（帧率、CPU 占用）
-- [ ] 兼容性测试（Win10/11、不同 DPI）
-- [ ] 打包与启动器（EXE / 便携版）
+- [x] 性能评估与优化（帧率、CPU 占用）
+- [x] 兼容性测试（Win10/11、不同 DPI）
+- [x] 打包与启动器（EXE / 便携版）
+
+## 实用化补充
+- 性能监控：在 `settings.json5` 中配置 `performance_monitor`（启用/采样间隔/日志路径）。
+- 兼容性报告：运行 `python scripts/compat_report.py` 生成系统与 DPI 报告。
+- 打包脚本：`scripts/build_exe.ps1` 与 `scripts/build_portable.ps1`。
 
 ## 备注
 - Deco-Terminal 仅做“美化宿主”，不追求完整终端功能。
