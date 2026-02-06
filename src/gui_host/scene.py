@@ -91,6 +91,14 @@ class GuiScene:
                 component.set_visual_preset(self.visual_preset)
                 component.set_style_preset(self.style_preset)
 
+    def apply_template(self, template_id: str) -> bool:
+        template = self.config_manager.apply_template(template_id)
+        if not template:
+            return False
+        self._load_layout()
+        self.refresh_presets()
+        return True
+
     def update(self, now_ts: float) -> None:
         for component in self.components.values():
             component.update(now_ts)

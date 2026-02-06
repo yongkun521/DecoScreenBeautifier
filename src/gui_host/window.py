@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Tuple
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
@@ -11,10 +11,16 @@ from gui_host.surface import RenderSurface
 
 
 class GuiMainWindow(QWidget):
-    def __init__(self, settings: dict, action_handler=None) -> None:
+    def __init__(self, settings: dict, action_handler=None, geometry_handler=None) -> None:
         super().__init__()
         self._settings = settings or {}
         self._action_handler = action_handler
+        self._geometry_handler = geometry_handler
+        self._pending_geometry = None
+        self._geometry_timer = QTimer(self)
+        self._geometry_timer.setInterval(350)
+        self._geometry_timer.setSingleShot(True)
+        self._geometry_timer.timeout.connect(self._emit_geometry_changed)
         self.surface = RenderSurface(self._settings, parent=self)
 
         layout = QVBoxLayout()
@@ -58,6 +64,35 @@ class GuiMainWindow(QWidget):
             event.accept()
             return
         super().keyPressEvent(event)
+
+    def moveEvent(self, event) -> None:  # noqa: N802
+        super().moveEvent(event)
+        self._schedule_geometry_update()
+
+    def resizeEvent(self, event) -> None:  # noqa: N802
+        super().resizeEvent(event)
+        self._schedule_geometry_update()
+
+    def closeEvent(self, event) -> None:  # noqa: N802
+        self._emit_geometry_changed(force=True)
+        super().closeEvent(event)
+
+    def _schedule_geometry_update(self) -> None:
+        if not self._geometry_handler:
+            return
+        self._pending_geometry = self.geometry()
+        self._geometry_timer.start()
+
+    def _emit_geometry_changed(self, force: bool = False) -> None:
+        if not self._geometry_handler:
+            return
+        if force and self._pending_geometry is None:
+            self._pending_geometry = self.geometry()
+        if self._pending_geometry is None:
+            return
+        rect = self._pending_geometry
+        self._pending_geometry = None
+        self._geometry_handler(rect)
 
 
 def _parse_pair(value: object) -> Optional[Tuple[int, int]]:
