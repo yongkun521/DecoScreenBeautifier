@@ -530,60 +530,60 @@ Screen.layout-strip-plus #p_stream { column-span: 12; row-span: 1; }
 /* DARK MODE (CYBERPUNK THEME)                                                */
 /* ========================================================================== */
 
-.-dark Screen {
+.-dark-mode Screen {
     background: #0D0208;  /* Deep Black */
     color: #00FF41;       /* Cyberpunk Green */
 }
 
-.-dark Header {
+.-dark-mode Header {
     background: #1a1a1a;
     color: #FF00FF;       /* Neon Pink */
 }
 
-.-dark Footer {
+.-dark-mode Footer {
     background: #1a1a1a;
     color: #00FFFF;       /* Neon Blue */
 }
 
-.-dark Placeholder {
+.-dark-mode Placeholder {
     border: heavy #00FF41;
     background: #001a05;
 }
 
-.-dark #p_hardware {
+.-dark-mode #p_hardware {
     border-title-color: #00FF41;
 }
 
-.-dark #p_clock {
+.-dark-mode #p_clock {
     border-title-color: #FF00FF;
     border: heavy #FF00FF;
 }
 
-.-dark #p_audio {
+.-dark-mode #p_audio {
     border-title-color: #00FFFF;
     border: heavy #00FFFF;
 }
 
-.-dark #toolbox {
+.-dark-mode #toolbox {
     border-right: solid $primary;
     background: #1a1a1a;
 }
 
-.-dark #toolbox_title {
+.-dark-mode #toolbox_title {
     background: $primary;
     color: black;
 }
 
-.-dark #editor_canvas {
+.-dark-mode #editor_canvas {
     border: dashed #444;
 }
 
-.-dark #properties {
+.-dark-mode #properties {
     border-left: solid $primary;
     background: #1a1a1a;
 }
 
-.-dark #prop_title {
+.-dark-mode #prop_title {
     background: $secondary;
     color: black;
 }

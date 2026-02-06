@@ -53,7 +53,8 @@ class DecoScreenApp(App):
 
     def action_toggle_dark(self) -> None:
         """切换暗黑模式 (Textual 内置支持)"""
-        self.dark = not self.dark
+        is_dark = self.has_class("-dark-mode") or self.theme == "textual-dark"
+        self.theme = "textual-light" if is_dark else "textual-dark"
 
     def action_toggle_editor(self) -> None:
         """打开编辑器"""
