@@ -128,7 +128,12 @@
     - [~] Windows Terminal 集成与无框模式尝试
         - [x] 添加 Windows Terminal 自动启动逻辑（可配置）
         - [x] 增加配置说明与使用文档
-        - [ ] 评估/验证 Windows Terminal 二次开发或内置打包可行性
+        - [~] 评估/验证 Windows Terminal 二次开发或内置打包可行性
+            - [x] 方案调研（2026-02-07）：Windows Terminal 可通过 Unpackaged(Zip)+Portable 模式随软件分发，并将 `settings` 与运行状态隔离在应用目录，不干扰用户既有配置
+            - [x] 方案决策（2026-02-07）：采用“Windows Terminal 作为可选捆绑宿主”路线（GUI 宿主继续默认入口）
+            - [x] 开发待办文档（2026-02-07）：`docs/WindowsTerminal_可选捆绑宿主_开发待办.md`
+            - [ ] PoC 验证：内置便携版 Windows Terminal，启动专用 `Deco` 配置（含 `experimental.retroTerminalEffect` / `experimental.pixelShaderPath`）
+            - [ ] 体验验证：评估 `focus/fullscreen` 对“无边框副屏”场景是否足够；若不够则继续以 GUI 宿主（方案 B）作为主路线
     - [~] GUI 宿主（方案B：自带渲染，不依赖外部终端）
     - [x] 设计文档（docs/方案B_GUI自带渲染_设计文档.md）
     - [x] 设计文档待办梳理：为可执行项补充方框并校准 4.x 状态
@@ -145,6 +150,8 @@
     - [x] 启动诊断（2026-02-07）：新增 DLL 逐项探测与预加载记录（`dll_probe` / `preload_notes`）用于定位 `QtCore` 依赖链失败点
     - [x] 打包修复（2026-02-07）：`DecoScreenBeautifier.spec` 全面排除 Anaconda 来源 DLL（含 ICU/API-SET），避免 onefile 运行时混装
     - [x] 启动修复（2026-02-07）：`main_gui.py` 启动前清理 PATH 中 conda 目录，降低 Qt 依赖解析误命中概率
+    - [x] legacy 启动修复（2026-02-07）：`main.py` 在 `DecoScreenBeautifier_legacy_terminal.exe` 冻结运行时不再二次拉起 Windows Terminal；新增启动异常弹窗与 `legacy_terminal_error.log`，避免“只有报错音效无可见错误”
+    - [ ] 下一步优化计划（2026-02-07）：`docs/GUI观感与窗口交互_下一步待办.md`（文字排布稳定性、抖动控制、窗口化与可调尺寸）
     - [~] 验收：按设计文档 10.1/10.2 逐项验证（已新增自动化脚本与报告产物）
         - [x] `scripts/validate_gui_host.py`：功能验收闭环（metrics/perf/report）
         - [x] `scripts/benchmark_gui_host.py`：性能验收闭环（1080x480/1920x480）
