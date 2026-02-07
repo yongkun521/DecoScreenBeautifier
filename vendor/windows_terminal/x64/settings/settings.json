@@ -1,0 +1,28 @@
+{
+    "$schema": "https://aka.ms/terminal-profiles-schema",
+    "copyFormatting": "none",
+    "copyOnSelect": false,
+    "profiles": {
+        "defaults": {
+            "font": {
+                "face": "Cascadia Mono",
+                "size": 14
+            }
+        },
+        "list": [
+            {
+                "name": "DecoScreenBeautifier-CRT",
+                "hidden": false,
+                "colorScheme": "Campbell",
+                "useAcrylic": true,
+                "opacity": 88,
+                "font": {
+                    "face": "Cascadia Mono",
+                    "size": 14
+                },
+                "experimental.retroTerminalEffect": true,
+                "retroTerminalEffect": true
+            }
+        ]
+    }
+}

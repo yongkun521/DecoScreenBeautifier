@@ -58,7 +58,7 @@
 
 ## 4. 验收标准（DoD）
 
-- [~] **可用性**：无系统 WT 的机器可直接通过内置 WT 启动。（已具备代码与打包路径，本机待补齐内置 `WindowsTerminal.exe` 后做实机验证）
+- [x] **可用性**：无系统 WT 的机器可直接通过内置 WT 启动。（已完成内置 `WindowsTerminal.exe` 实打包与启动链路验证）
 - [x] **隔离性**：用户原有 WT `settings/profiles` 不被覆盖。（内置 WT 仅操作 Portable 目录）
 - [ ] **稳定性**：连续启动 20 次，失败率为 0（同一环境）。
 - [x] **可回退性**：内置 WT 缺失或异常时，自动退回系统 WT 或 classic。
@@ -115,4 +115,11 @@
 - [x] 增加 WT 资产缺失时的启动自检与回退提示（含已检查路径与回退目标）：`src/utils/terminal_launcher.py`
 - [x] 新增 WT 路线验收脚本：`scripts/validate_wt_bundle.py`
 - [x] 完成副屏场景 smoke 验收（1080x480 / 1920x480，focus + fullscreen）：`build/validation/wt_bundle/wt_bundle_report.json`
-- [x] 本轮评审结论：**维持**（当前环境系统 WT 可用、回退链路稳定；待内置 WT 资产实机补测后再评估是否转为“继续”）
+- [x] 本轮评审结论：**继续**（内置 WT 资产实打包已完成，专用 profile 初始化与回退链路均验证通过）
+
+## 12. PoC 实打包记录（2026-02-07）
+
+- [x] 下载并落地内置 WT x64 资产：`vendor/windows_terminal/x64/WindowsTerminal.exe`
+- [x] 增强包构建完成：`dist/DecoScreenBeautifier.exe`（含 `dist/vendor/windows_terminal/x64`）
+- [x] 增强便携包构建完成：`build/DecoScreenBeautifier_portable_enhanced.zip`
+- [x] PoC 验证完成：`build/validation/wt_bundle/wt_bundle_report.json` 显示 `bundled_wt.available=true`、`portable_profile.profile_found=true`、`route_assessment.recommendation=继续`
