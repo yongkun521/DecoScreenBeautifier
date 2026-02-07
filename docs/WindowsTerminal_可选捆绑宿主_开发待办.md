@@ -129,3 +129,9 @@
 - [x] 修复打包入口语义：`DecoScreenBeautifier.exe` 统一为终端宿主入口（`src/main.py`），GUI 独立为 `DecoScreenBeautifier_gui.exe`（`src/main_gui.py`）
 - [x] 修复冻结模式默认后端：当 `terminal_integration.force_bundled_wt_only=true`（默认）时，冻结版主入口强制走 `windows_terminal`（内置优先）
 - [x] 进程级复核通过：启动 `dist/DecoScreenBeautifier.exe` 后检测到内置 `dist/vendor/windows_terminal/x64/WindowsTerminal.exe` 被拉起
+
+## 14. 启动崩溃修复（2026-02-07）
+
+- [x] 修复 `ModuleNotFoundError: No module named 'encodings'`：在 WT 拉起子进程前清理 PyInstaller 残留环境变量（`PYTHONHOME/PYTHONPATH/_PYI_*/PYI_*`）
+- [x] 修复位置：`src/utils/terminal_launcher.py`（`_build_child_environment` + `subprocess.Popen(..., env=child_env)`）
+- [x] 实测结果：内置 `WindowsTerminal.exe` 拉起后主程序可正常驻留，不再触发 embedded python interpreter 初始化失败

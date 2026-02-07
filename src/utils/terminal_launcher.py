@@ -23,6 +23,15 @@ BUNDLED_WT_RELATIVE_CANDIDATES = (
     Path("vendor") / "windows_terminal" / "x64" / "WindowsTerminal.exe",
     Path("windows_terminal") / "WindowsTerminal.exe",
 )
+PYTHON_RELAUNCH_ENV_KEYS = {
+    "PYTHONHOME",
+    "PYTHONPATH",
+    "PYTHONEXECUTABLE",
+    "PYTHONUTF8",
+    "PYTHONNOUSERSITE",
+    "PYTHONSAFEPATH",
+    "PYTHONPLATLIBDIR",
+}
 
 
 def _is_windows() -> bool:
@@ -371,6 +380,22 @@ def _normalize_settings(settings: Any) -> dict:
     return {}
 
 
+def _build_child_environment() -> dict[str, str]:
+    env = os.environ.copy()
+    for key in list(env.keys()):
+        key_upper = key.upper()
+        if key_upper in PYTHON_RELAUNCH_ENV_KEYS:
+            env.pop(key, None)
+            continue
+        if key_upper.startswith("_PYI_"):
+            env.pop(key, None)
+            continue
+        if key_upper.startswith("PYI_"):
+            env.pop(key, None)
+            continue
+    return env
+
+
 def _build_app_command(argv: Iterable[str]) -> list[str]:
     argv_list = list(argv)
     if not argv_list:
@@ -461,8 +486,9 @@ def maybe_launch_in_windows_terminal(
             launch_settings["profile"] = profile_name
 
     args = _build_wt_command(wt_exe, launch_settings, argv)
+    child_env = _build_child_environment()
     try:
-        subprocess.Popen(args)
+        subprocess.Popen(args, env=child_env)
     except OSError as exc:
         sys.stderr.write(f"Failed to launch Windows Terminal: {exc}\n")
         return False
