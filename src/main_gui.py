@@ -2,6 +2,7 @@ import importlib
 import os
 import sys
 import argparse
+import ctypes
 from copy import deepcopy
 from pathlib import Path
 from typing import Optional
@@ -15,6 +16,36 @@ REQUIRED_MODULES = {
     "json5": "json5",
     "appdirs": "appdirs",
 }
+
+APP_STARTUP_ERROR_TITLE = "DecoScreenBeautifier Startup Error"
+
+
+def _stderr_write(message: str) -> None:
+    text = str(message)
+    stream = getattr(sys, "stderr", None)
+    if stream is not None and hasattr(stream, "write"):
+        try:
+            stream.write(text)
+            if hasattr(stream, "flush"):
+                stream.flush()
+            return
+        except Exception:
+            pass
+    try:
+        os.write(2, text.encode("utf-8", errors="replace"))
+    except Exception:
+        pass
+
+
+def _show_startup_error(message: str, title: str = APP_STARTUP_ERROR_TITLE) -> None:
+    text = str(message)
+    _stderr_write(text + "\n")
+    if os.name != "nt":
+        return
+    try:
+        ctypes.windll.user32.MessageBoxW(None, text, title, 0x10)
+    except Exception:
+        pass
 
 
 def _project_root() -> Path:
@@ -52,14 +83,13 @@ def _maybe_reexec_with_venv() -> None:
             return
     except FileNotFoundError:
         return
-    sys.stderr.write(
+    _stderr_write(
         f"Missing dependencies detected. Re-launching with venv: {venv_python}\n"
     )
-    sys.stderr.flush()
     try:
         os.execv(str(venv_python), [str(venv_python)] + sys.argv)
     except OSError as exc:
-        sys.stderr.write(f"Failed to re-launch with venv: {exc}\n")
+        _stderr_write(f"Failed to re-launch with venv: {exc}\n")
 
 
 def _ensure_dependencies() -> None:
@@ -68,29 +98,32 @@ def _ensure_dependencies() -> None:
         _maybe_reexec_with_venv()
         requirements = _project_root() / "requirements.txt"
         missing_list = ", ".join(sorted(set(missing)))
-        sys.stderr.write("Missing Python dependencies: ")
-        sys.stderr.write(missing_list)
-        sys.stderr.write("\n")
-        sys.stderr.write(f"Python: {sys.executable}\n")
+        lines = [
+            "Missing Python dependencies:",
+            f"  {missing_list}",
+            f"Python: {sys.executable}",
+        ]
         if requirements.is_file():
-            sys.stderr.write("Install them with:\n")
-            sys.stderr.write(f"  python -m pip install -r {requirements}\n")
+            lines.append("Install them with:")
+            lines.append(f"  python -m pip install -r {requirements}")
         else:
-            sys.stderr.write("Install them with:\n")
-            sys.stderr.write("  python -m pip install -r requirements.txt\n")
-        sys.stderr.write(
-            "If you are using the local venv, activate it first:\n"
-            "  .\\venv\\Scripts\\activate\n"
-        )
+            lines.append("Install them with:")
+            lines.append("  python -m pip install -r requirements.txt")
+        lines.append("If you are using the local venv, activate it first:")
+        lines.append("  .\\venv\\Scripts\\activate")
+        _show_startup_error("\n".join(lines))
         raise SystemExit(1)
 
     qt_runtime_error = _check_qt_runtime()
     if qt_runtime_error:
-        sys.stderr.write("Qt runtime check failed:\n")
-        sys.stderr.write(f"  {qt_runtime_error}\n")
-        sys.stderr.write(
-            "Try installing Microsoft Visual C++ Redistributable (2015-2022 x64), "
-            "then retry.\n"
+        _show_startup_error(
+            "\n".join(
+                [
+                    "Qt runtime check failed:",
+                    f"  {qt_runtime_error}",
+                    "Try installing Microsoft Visual C++ Redistributable (2015-2022 x64), then retry.",
+                ]
+            )
         )
         raise SystemExit(1)
 
