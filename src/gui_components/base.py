@@ -43,6 +43,7 @@ class GuiComponentBase:
         self._renderable = Text("")
         self._visual_preset: dict = {}
         self._style_preset: dict = {}
+        self._update_count = 0
 
     def set_visual_preset(self, preset: dict) -> None:
         self._visual_preset = preset or {}
@@ -64,10 +65,12 @@ class GuiComponentBase:
     def update(self, now_ts: float) -> None:
         if self.update_interval <= 0:
             self.update_content()
+            self._update_count += 1
             self._last_update = now_ts
             return
         if self._last_update <= 0 or now_ts - self._last_update >= self.update_interval:
             self.update_content()
+            self._update_count += 1
             self._last_update = now_ts
 
     def update_content(self) -> None:
@@ -84,6 +87,10 @@ class GuiComponentBase:
             height,
             base_style=base_style,
         )
+
+    @property
+    def update_count(self) -> int:
+        return self._update_count
 
     def _base_style(self, ctx: RenderContext) -> Optional[TextStyle]:
         fg_hex = self.get_style_color("primary", "#00FF41")

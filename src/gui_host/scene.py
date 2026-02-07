@@ -71,6 +71,16 @@ class GuiScene:
                 instance = PlaceholderComponent(component_id, type_name)
             self.components[component_id] = instance
 
+    def component_update_counts(self) -> Dict[str, int]:
+        result: Dict[str, int] = {}
+        for component_id, component in self.components.items():
+            update_count = getattr(component, "update_count", 0)
+            try:
+                result[component_id] = int(update_count)
+            except (TypeError, ValueError):
+                result[component_id] = 0
+        return result
+
     def refresh_presets(self) -> None:
         settings = self.config_manager.settings
         self.visual_preset = get_font_preset(settings.get("font_preset"))
