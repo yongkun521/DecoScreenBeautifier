@@ -73,3 +73,29 @@ python scripts/compat_report.py path\\to\\compat_report.json
 ```powershell
 .\\scripts\\build_portable.ps1 -DistDir "dist\\DecoScreenBeautifier" -Output "dist\\DecoScreenBeautifier_portable.zip"
 ```
+
+## 4. GUI 验收与性能基准（方案 B / 10.1 / 10.2）
+
+在项目根目录执行：
+
+```powershell
+.\venv\Scripts\python.exe scripts/validate_gui_host.py --output-dir build/validation/gui_host
+```
+
+说明：
+- 会自动生成运行时配置、启动 GUI、采样并退出。
+- 产物目录默认在 `build/validation/gui_host/`，核心文件包括：
+  - `report.json`：功能验收结果（PASS/FAIL + 各检查项）
+  - `metrics.json`：退出时 GUI 指标快照（frame/component/window/effects）
+  - `gui_perf.jsonl`：GUI 性能采样日志（fps/cpu/memory/frame_time）
+
+性能基准（1080x480 + 1920x480）：
+
+```powershell
+.\venv\Scripts\python.exe scripts/benchmark_gui_host.py --output-dir build/validation/gui_host_perf --run-seconds 8
+```
+
+说明：
+- 默认阈值为：平均 FPS >= 20，平均 CPU <= 85%。
+- 输出 `benchmark_report.json`，包含每个分辨率场景的平均 FPS / CPU / 内存 / P95 帧耗时。
+- 若环境缺少 Qt 运行时（如 `QtCore` DLL 加载失败），报告会标记 `qt_runtime_available=false`。

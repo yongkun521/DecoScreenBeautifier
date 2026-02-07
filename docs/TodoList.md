@@ -137,7 +137,10 @@
     - [x] V1：模板选择/最小设置/缩放/窗口持久化
     - [x] V2：像素级 CRT 后处理（曲率/色散/扫描线/噪点/暗角）
     - [x] V2：GUI 版布局编辑器（拖拽/网格对齐/尺寸预览）
-    - [ ] 验收：按设计文档 10.1/10.2 逐项验证
+    - [~] 验收：按设计文档 10.1/10.2 逐项验证（已新增自动化脚本与报告产物）
+        - [x] `scripts/validate_gui_host.py`：功能验收闭环（metrics/perf/report）
+        - [x] `scripts/benchmark_gui_host.py`：性能验收闭环（1080x480/1920x480）
+        - [~] 当前环境阻塞：2026-02-07 本机 Qt 运行时缺失（QtCore DLL load failed），待安装 VC++ 运行库后复测
     - [~] Deco-Terminal（自研终端外壳）
     - [x] 后端选择与回退策略
     - [x] conhost 无边框基础处理（Win32）
