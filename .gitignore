@@ -33,6 +33,7 @@ release
 # Python
 venv/
 .venv/
+venv_py39_backup_20260207/
 __pycache__/
 *.py[cod]
 *$py.class

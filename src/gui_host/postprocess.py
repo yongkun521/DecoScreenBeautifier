@@ -113,8 +113,10 @@ def _image_to_bgra_array(image: QImage):
     if width <= 0 or height <= 0:
         return np.zeros((0, 0, 4), dtype=np.uint8)
     ptr = image.bits()
-    ptr.setsize(image.sizeInBytes())
-    arr = np.frombuffer(ptr, dtype=np.uint8)
+    total_size = image.sizeInBytes()
+    if hasattr(ptr, "setsize"):
+        ptr.setsize(total_size)
+    arr = np.frombuffer(ptr, dtype=np.uint8, count=total_size)
     bytes_per_line = image.bytesPerLine()
     arr = arr.reshape((height, bytes_per_line))
     arr = arr[:, : width * 4]
@@ -124,8 +126,12 @@ def _image_to_bgra_array(image: QImage):
 def _array_to_image(arr, *, w: int, h: int) -> QImage:
     output = QImage(w, h, QImage.Format.Format_ARGB32)
     ptr = output.bits()
-    ptr.setsize(output.sizeInBytes())
-    out_arr = np.frombuffer(ptr, dtype=np.uint8).reshape((h, output.bytesPerLine()))
+    total_size = output.sizeInBytes()
+    if hasattr(ptr, "setsize"):
+        ptr.setsize(total_size)
+    out_arr = np.frombuffer(ptr, dtype=np.uint8, count=total_size).reshape(
+        (h, output.bytesPerLine())
+    )
     out_arr[:, : w * 4] = arr.reshape((h, w * 4))
     if output.bytesPerLine() > w * 4:
         out_arr[:, w * 4 :] = 0

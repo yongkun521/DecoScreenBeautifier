@@ -140,7 +140,8 @@
     - [~] 验收：按设计文档 10.1/10.2 逐项验证（已新增自动化脚本与报告产物）
         - [x] `scripts/validate_gui_host.py`：功能验收闭环（metrics/perf/report）
         - [x] `scripts/benchmark_gui_host.py`：性能验收闭环（1080x480/1920x480）
-        - [~] 当前环境阻塞：2026-02-07 本机 Qt 运行时缺失（QtCore DLL load failed），待安装 VC++ 运行库后复测
+        - [x] 环境阻塞已解除：2026-02-07 本机 Qt 运行时问题已排除（升级项目 venv 至 Python 3.11）
+        - [~] 性能待优化：2026-02-07 本机基准未达临时阈值（FPS 偏低、CPU 偏高）
     - [~] Deco-Terminal（自研终端外壳）
     - [x] 后端选择与回退策略
     - [x] conhost 无边框基础处理（Win32）
