@@ -50,6 +50,18 @@ python scripts/compat_report.py path\\to\\compat_report.json
 .\\scripts\\build_exe.ps1
 ```
 
+构建 EXE 并包含内置 Windows Terminal（增强包模式）：
+
+```powershell
+.\\scripts\\build_exe.ps1 -IncludeBundledWT
+```
+
+指定内置 WT 资产来源目录（目录下应包含 `WindowsTerminal.exe`）：
+
+```powershell
+.\\scripts\\build_exe.ps1 -IncludeBundledWT -BundledWTSource "vendor\\windows_terminal\\x64"
+```
+
 清理后构建：
 
 ```powershell
@@ -68,13 +80,61 @@ python scripts/compat_report.py path\\to\\compat_report.json
 .\\scripts\\build_portable.ps1
 ```
 
+生成便携包并包含内置 Windows Terminal（增强包模式）：
+
+```powershell
+.\\scripts\\build_portable.ps1 -IncludeBundledWT
+```
+
+仅生成标准包（不含内置 WT，体积更小）：
+
+```powershell
+.\\scripts\\build_exe.ps1
+.\\scripts\\build_portable.ps1
+```
+
+仅生成增强包（含内置 WT，开箱即用）：
+
+```powershell
+.\\scripts\\build_exe.ps1 -IncludeBundledWT
+.\\scripts\\build_portable.ps1 -IncludeBundledWT
+```
+
 指定输入/输出：
 
 ```powershell
 .\\scripts\\build_portable.ps1 -DistDir "dist\\DecoScreenBeautifier" -Output "dist\\DecoScreenBeautifier_portable.zip"
 ```
 
-## 4. GUI 验收与性能基准（方案 B / 10.1 / 10.2）
+## 4. Windows Terminal（可选捆绑）验收脚本
+
+在项目根目录执行：
+
+```powershell
+.\venv\Scripts\python.exe scripts/validate_wt_bundle.py
+```
+
+推荐同时验证 focus/fullscreen 两种副屏近似无框模式：
+
+```powershell
+.\venv\Scripts\python.exe scripts/validate_wt_bundle.py --with-smoke-run --mode focus --mode fullscreen
+```
+
+说明：
+- 默认输出目录：`build/validation/wt_bundle/`
+- 关键产物：
+  - `wt_bundle_report.json`：汇总内置/系统 WT 可用性、回退路径、profile 初始化检查
+  - `wt_bundle_smoke_focus_1080x480.txt` / `wt_bundle_smoke_focus_1920x480.txt`：focus 模式副屏场景启动烟测
+  - `wt_bundle_smoke_fullscreen_1080x480.txt` / `wt_bundle_smoke_fullscreen_1920x480.txt`：fullscreen 模式副屏场景启动烟测
+  - `portable_settings_snapshot.json`：便携 settings 快照（仅内置 WT 可用时生成）
+
+## 5. Windows Terminal 增强包占位资源
+
+- 默认像素着色器占位文件：`vendor/windows_terminal/shaders/deco_placeholder.hlsl`
+- 当 `terminal_integration.bundled_wt_enable_pixel_shader=true` 时，启动器会把该路径写入 profile 的 `experimental.pixelShaderPath`。
+- 生产发布时可替换为真实 CRT shader 文件，保持同路径即可无缝生效。
+
+## 6. GUI 验收与性能基准（方案 B / 10.1 / 10.2）
 
 在项目根目录执行：
 
@@ -100,7 +160,7 @@ python scripts/compat_report.py path\\to\\compat_report.json
 - 输出 `benchmark_report.json`，包含每个分辨率场景的平均 FPS / CPU / 内存 / P95 帧耗时。
 - 若环境缺少 Qt 运行时（如 `QtCore` DLL 加载失败），报告会标记 `qt_runtime_available=false`。
 
-## 5. Qt 启动失败排查（`DLL load failed while importing QtCore`）
+## 7. Qt 启动失败排查（`DLL load failed while importing QtCore`）
 
 若双击 `DecoScreenBeautifier.exe` 弹出：`Qt runtime check failed: DLL load failed while importing QtCore`，请按以下顺序排查：
 

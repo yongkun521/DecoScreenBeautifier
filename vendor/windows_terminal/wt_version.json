@@ -1,0 +1,12 @@
+{
+    "vendor": "microsoft/terminal",
+    "distribution": "Unpackaged ZIP",
+    "architecture": "x64",
+    "version": "v1.23.20211.0",
+    "release_date": "2026-01-24",
+    "asset_name": "Microsoft.WindowsTerminal_1.23.20211.0_x64.zip",
+    "asset_size_bytes": 11354184,
+    "download_url": "https://github.com/microsoft/terminal/releases/download/v1.23.20211.0/Microsoft.WindowsTerminal_1.23.20211.0_x64.zip",
+    "portable_mode": true,
+    "notes": "在同目录创建 .portable 文件即可启用便携模式，配置与状态写入应用目录。"
+}

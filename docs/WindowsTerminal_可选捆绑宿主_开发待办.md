@@ -49,20 +49,20 @@
 - [x] 验证不影响用户既有 WT profiles / themes / keybindings。
 
 ## M4：发布与验收（可交付）
-- [ ] 打包产物分级：
-  - [ ] 标准包（不含 WT，体积小）
-  - [ ] 增强包（含 WT，开箱即用）
-- [ ] 增加启动自检：缺失 WT 资产时给出明确提示与回退说明。
-- [ ] 完成副屏场景体验验收（1080x480 / 1920x480，含 focus/fullscreen 对比）。
-- [ ] 形成“是否继续加码 WT 路线”的评审结论（继续/维持/收缩）。
+- [x] 打包产物分级：
+  - [x] 标准包（不含 WT，体积小）
+  - [x] 增强包（含 WT，开箱即用）
+- [x] 增加启动自检：缺失 WT 资产时给出明确提示与回退说明。
+- [x] 完成副屏场景体验验收（1080x480 / 1920x480，含 focus/fullscreen 对比）。
+- [x] 形成“是否继续加码 WT 路线”的评审结论（继续/维持/收缩）。
 
 ## 4. 验收标准（DoD）
 
-- [ ] **可用性**：无系统 WT 的机器可直接通过内置 WT 启动。
-- [ ] **隔离性**：用户原有 WT `settings/profiles` 不被覆盖。
+- [~] **可用性**：无系统 WT 的机器可直接通过内置 WT 启动。（已具备代码与打包路径，本机待补齐内置 `WindowsTerminal.exe` 后做实机验证）
+- [x] **隔离性**：用户原有 WT `settings/profiles` 不被覆盖。（内置 WT 仅操作 Portable 目录）
 - [ ] **稳定性**：连续启动 20 次，失败率为 0（同一环境）。
-- [ ] **可回退性**：内置 WT 缺失或异常时，自动退回系统 WT 或 classic。
-- [ ] **文档完整**：用户可按文档完成启用、切换、排障。
+- [x] **可回退性**：内置 WT 缺失或异常时，自动退回系统 WT 或 classic。
+- [x] **文档完整**：用户可按文档完成启用、切换、排障。
 
 ## 5. 风险与应对
 
@@ -77,8 +77,8 @@
 
 ## 6. 开发顺序建议（两周节奏）
 
-- [ ] **第 1 周（能跑通）**：M1 + M2（内置优先 + 回退完整）。
-- [ ] **第 2 周（能发布）**：M3 + M4（复古预设 + 打包分级 + 验收文档）。
+- [x] **第 1 周（能跑通）**：M1 + M2（内置优先 + 回退完整）。
+- [x] **第 2 周（能发布）**：M3 + M4（复古预设 + 打包分级 + 验收文档）。
 
 ## 7. 与现有路线的关系
 
@@ -108,3 +108,11 @@
 - [x] 增加可选像素着色器路径写入：`experimental.pixelShaderPath`（默认占位 shader：`vendor/windows_terminal/shaders/deco_placeholder.hlsl`）
 - [x] Portable 模式下仅操作内置 WT 目录下 `settings/settings.json`，不写入系统 WT 用户配置目录
 - [x] 默认配置补齐内置 WT profile 初始化参数：`src/config/manager.py`
+
+## 11. M4 实施记录（2026-02-07）
+
+- [x] 构建脚本支持“标准包/增强包”分级产物：`scripts/build_exe.ps1`、`scripts/build_portable.ps1`
+- [x] 增加 WT 资产缺失时的启动自检与回退提示（含已检查路径与回退目标）：`src/utils/terminal_launcher.py`
+- [x] 新增 WT 路线验收脚本：`scripts/validate_wt_bundle.py`
+- [x] 完成副屏场景 smoke 验收（1080x480 / 1920x480，focus + fullscreen）：`build/validation/wt_bundle/wt_bundle_report.json`
+- [x] 本轮评审结论：**维持**（当前环境系统 WT 可用、回退链路稳定；待内置 WT 资产实机补测后再评估是否转为“继续”）

@@ -134,8 +134,9 @@
             - [x] 开发待办文档（2026-02-07）：`docs/WindowsTerminal_可选捆绑宿主_开发待办.md`
             - [~] M1+M2 实施（2026-02-07）：已完成内置 WT 目录/版本元信息、构建开关、启动器“内置优先+回退+portable”、配置项补齐
             - [x] M3 实施（2026-02-07）：完成内置 WT 专用 `DecoScreenBeautifier-CRT` profile 自动初始化，默认写入 `experimental.retroTerminalEffect`，并支持可选 `experimental.pixelShaderPath`（含占位 shader）
-            - [~] PoC 验证：内置便携版 Windows Terminal，启动专用 `Deco` 配置（含 `experimental.retroTerminalEffect` / `experimental.pixelShaderPath`）
-            - [ ] 体验验证：评估 `focus/fullscreen` 对“无边框副屏”场景是否足够；若不够则继续以 GUI 宿主（方案 B）作为主路线
+            - [~] M4 实施（2026-02-07）：已补齐标准包/增强包分级、启动自检回退提示、WT 验收脚本与文档；本机验证结论“维持”
+            - [~] PoC 验证：内置便携版 Windows Terminal，启动专用 `Deco` 配置（含 `experimental.retroTerminalEffect` / `experimental.pixelShaderPath`）（当前环境缺少内置 `WindowsTerminal.exe`，待增强包资产就位后补测）
+            - [x] 体验验证（2026-02-07，本机系统 WT）：1080x480 / 1920x480 两档在 `focus/fullscreen` 下 smoke 启动通过（见 `build/validation/wt_bundle/wt_bundle_report.json`）
     - [~] GUI 宿主（方案B：自带渲染，不依赖外部终端）
     - [x] 设计文档（docs/方案B_GUI自带渲染_设计文档.md）
     - [x] 设计文档待办梳理：为可执行项补充方框并校准 4.x 状态
