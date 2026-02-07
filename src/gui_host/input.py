@@ -6,6 +6,7 @@ KEY_ACTIONS = {
     Qt.Key.Key_E: "toggle_editor",
     Qt.Key.Key_T: "toggle_templates",
     Qt.Key.Key_S: "toggle_settings",
+    Qt.Key.Key_G: "open_gui_editor",
 }
 
 
@@ -20,4 +21,5 @@ def action_from_key(event) -> str:
         "e": "toggle_editor",
         "t": "toggle_templates",
         "s": "toggle_settings",
+        "g": "open_gui_editor",
     }.get(text, "")

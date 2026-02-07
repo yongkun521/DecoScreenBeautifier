@@ -63,6 +63,18 @@ class ConfigManager:
                 "probability": 0.12,
             },
         }
+        crt_shader_defaults = {
+            "enabled": False,
+            "curvature": 0.07,
+            "scanline_intensity": 0.14,
+            "scanline_spacing": 2,
+            "chromatic_aberration": 1,
+            "vignette": 0.22,
+            "noise": 0.025,
+            "blur": 0.1,
+            "mask_strength": 0.08,
+            "jitter": 0.0,
+        }
         terminal_defaults = {
             "enabled": False,
             "backend": "windows_terminal",
@@ -98,6 +110,7 @@ class ConfigManager:
             "font_size": 14,
             "cell_aspect": 1.0,
             "effects": deepcopy(deco_effects_defaults),
+            "crt_shader": deepcopy(crt_shader_defaults),
         }
         performance_defaults = {
             "enabled": False,
@@ -173,6 +186,18 @@ class ConfigManager:
                 "probability": 0.12,
             },
         }
+        crt_shader_defaults = {
+            "enabled": False,
+            "curvature": 0.07,
+            "scanline_intensity": 0.14,
+            "scanline_spacing": 2,
+            "chromatic_aberration": 1,
+            "vignette": 0.22,
+            "noise": 0.025,
+            "blur": 0.1,
+            "mask_strength": 0.08,
+            "jitter": 0.0,
+        }
         terminal_defaults = {
             "enabled": False,
             "backend": "windows_terminal",
@@ -224,6 +249,7 @@ class ConfigManager:
             "font_size": 14,
             "cell_aspect": 1.0,
             "effects": deepcopy(deco_effects_defaults),
+            "crt_shader": deepcopy(crt_shader_defaults),
         }
         gui_settings = self.settings.get("gui_host")
         if not isinstance(gui_settings, dict):
@@ -245,6 +271,12 @@ class ConfigManager:
                     section.setdefault(sub_key, sub_value)
             else:
                 gui_effects.setdefault(key, value)
+        crt_shader = gui_settings.get("crt_shader")
+        if not isinstance(crt_shader, dict):
+            crt_shader = {}
+            gui_settings["crt_shader"] = crt_shader
+        for key, value in crt_shader_defaults.items():
+            crt_shader.setdefault(key, value)
         if gui_settings.get("monitor") in {None, ""}:
             gui_settings["monitor"] = terminal_settings.get("deco_monitor", "auto")
         if gui_settings.get("use_work_area") in {None, ""}:

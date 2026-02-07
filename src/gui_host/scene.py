@@ -37,6 +37,14 @@ class GuiScene:
         self._load_layout()
         self.refresh_presets()
 
+    @property
+    def template_id(self) -> str:
+        return str(self.config_manager.settings.get("template_id", DEFAULT_TEMPLATE_ID))
+
+    @property
+    def template(self) -> dict:
+        return self.config_manager.get_template(self.template_id) or {}
+
     def _load_layout(self) -> None:
         template_id = self.config_manager.settings.get("template_id", DEFAULT_TEMPLATE_ID)
         layout_config = self.config_manager.load_layout(str(template_id))
@@ -98,6 +106,13 @@ class GuiScene:
         self._load_layout()
         self.refresh_presets()
         return True
+
+    def get_layout_data(self) -> dict:
+        return self.layout_config
+
+    def reload_layout(self) -> None:
+        self._load_layout()
+        self.refresh_presets()
 
     def update(self, now_ts: float) -> None:
         for component in self.components.values():

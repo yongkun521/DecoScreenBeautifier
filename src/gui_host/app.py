@@ -39,6 +39,7 @@ class GuiHostApp:
         self.window.surface.update_settings(self.gui_settings, global_scale=self.scene.global_scale)
         grid_w, grid_h = self.window.surface.grid_size()
         grid = self.scene.render(grid_w, grid_h, self._frame_index, now)
+        self.window.surface.set_frame_index(self._frame_index)
         self.window.surface.set_grid(grid)
         self._frame_index += 1
 
@@ -52,8 +53,14 @@ class GuiHostApp:
         if action == "toggle_settings":
             self._open_settings_dialog()
             return
-        if action in {"toggle_dark", "toggle_editor"}:
-            # Placeholders for MVP
+        if action == "open_gui_editor":
+            self._open_gui_editor_dialog()
+            return
+        if action == "toggle_editor":
+            self._open_gui_editor_dialog()
+            return
+        if action == "toggle_dark":
+            # Placeholder for MVP
             return
 
     def _open_templates_dialog(self) -> None:
@@ -81,6 +88,18 @@ class GuiHostApp:
         payload = dialog.settings_payload()
         self._apply_gui_settings(payload)
 
+    def _open_gui_editor_dialog(self) -> None:
+        from gui_host.dialogs import GuiLayoutEditorDialog
+
+        dialog = GuiLayoutEditorDialog(
+            self.config_manager,
+            template=self.scene.template,
+            layout_data=self.scene.get_layout_data(),
+            parent=self.window,
+        )
+        if dialog.exec() == QDialog.Accepted:
+            self.scene.reload_layout()
+
     def _apply_gui_settings(self, payload: dict) -> None:
         self._refresh_gui_settings()
         monitor = payload.get("monitor") or "auto"
@@ -100,6 +119,12 @@ class GuiHostApp:
             effects = {}
             self.gui_settings["effects"] = effects
         effects["enabled"] = bool(payload.get("effects_enabled", True))
+
+        crt_shader = self.gui_settings.get("crt_shader")
+        if not isinstance(crt_shader, dict):
+            crt_shader = {}
+            self.gui_settings["crt_shader"] = crt_shader
+        crt_shader["enabled"] = bool(payload.get("crt_shader_enabled", False))
 
         if new_monitor != old_monitor:
             self.gui_settings["pos_px"] = ""

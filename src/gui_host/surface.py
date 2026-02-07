@@ -3,10 +3,11 @@ from __future__ import annotations
 from typing import Optional, Tuple
 
 from PySide6.QtCore import QRect, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QImage, QPainter
 from PySide6.QtWidgets import QWidget
 
 from core.renderer import RenderGrid, TextStyle
+from gui_host.postprocess import CRTShaderConfig, apply_crt_shader
 
 
 class RenderSurface(QWidget):
@@ -17,7 +18,9 @@ class RenderSurface(QWidget):
         self._font_size = 14
         self._cell_aspect = 1.0
         self._global_scale = 1.0
+        self._frame_index = 0
         self._background = QColor(0, 0, 0)
+        self._crt_shader_config = CRTShaderConfig()
         self._font_normal: Optional[QFont] = None
         self._font_bold: Optional[QFont] = None
         self._metrics: Optional[QFontMetrics] = None
@@ -33,6 +36,9 @@ class RenderSurface(QWidget):
             self._font_face = str(settings.get("font_face") or self._font_face)
             self._font_size = _safe_int(settings.get("font_size"), self._font_size)
             self._cell_aspect = _safe_float(settings.get("cell_aspect"), self._cell_aspect)
+            self._crt_shader_config = CRTShaderConfig.from_settings(
+                settings.get("crt_shader")
+            )
         if global_scale is not None:
             self._global_scale = _safe_float(global_scale, self._global_scale)
         self._rebuild_metrics()
@@ -42,6 +48,9 @@ class RenderSurface(QWidget):
         self._grid = grid
         self.update()
 
+    def set_frame_index(self, frame_index: int) -> None:
+        self._frame_index = _safe_int(frame_index, 0)
+
     def grid_size(self) -> Tuple[int, int]:
         self._rebuild_metrics()
         width = max(1, self.width() // max(1, self._cell_w))
@@ -49,52 +58,62 @@ class RenderSurface(QWidget):
         return width, height
 
     def paintEvent(self, event) -> None:  # noqa: N802
-        painter = QPainter(self)
+        target_image = QImage(self.size(), QImage.Format.Format_ARGB32)
+        target_image.fill(self._background)
+        painter = QPainter(target_image)
         painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, False)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-        painter.fillRect(self.rect(), self._background)
+        painter.fillRect(target_image.rect(), self._background)
 
         grid = self._grid
-        if grid is None or grid.width <= 0 or grid.height <= 0:
-            painter.end()
-            return
+        if grid is not None and grid.width > 0 and grid.height > 0:
+            self._rebuild_metrics()
+            if self._font_normal and self._metrics:
+                total_w = grid.width * self._cell_w
+                total_h = grid.height * self._cell_h
+                offset_x = max(0, (self.width() - total_w) // 2)
+                offset_y = max(0, (self.height() - total_h) // 2)
 
-        self._rebuild_metrics()
-        if not self._font_normal or not self._metrics:
-            painter.end()
-            return
-
-        total_w = grid.width * self._cell_w
-        total_h = grid.height * self._cell_h
-        offset_x = max(0, (self.width() - total_w) // 2)
-        offset_y = max(0, (self.height() - total_h) // 2)
-
-        for y, row in enumerate(grid.cells):
-            if not row:
-                continue
-            y_top = offset_y + y * self._cell_h
-            baseline = y_top + self._baseline
-            for start, text, style in _iter_segments(row):
-                if not text:
-                    continue
-                fg, bg = _resolve_colors(style, self._background)
-                if bg is not None:
-                    painter.fillRect(
-                        QRect(
-                            offset_x + start * self._cell_w,
-                            y_top,
-                            len(text) * self._cell_w,
-                            self._cell_h,
-                        ),
-                        bg,
-                    )
-                if text.strip() == "" and bg is None:
-                    continue
-                painter.setFont(self._font_bold if style.bold else self._font_normal)
-                painter.setPen(fg)
-                painter.drawText(offset_x + start * self._cell_w, baseline, text)
+                for y, row in enumerate(grid.cells):
+                    if not row:
+                        continue
+                    y_top = offset_y + y * self._cell_h
+                    baseline = y_top + self._baseline
+                    for start, text, style in _iter_segments(row):
+                        if not text:
+                            continue
+                        fg, bg = _resolve_colors(style, self._background)
+                        if bg is not None:
+                            painter.fillRect(
+                                QRect(
+                                    offset_x + start * self._cell_w,
+                                    y_top,
+                                    len(text) * self._cell_w,
+                                    self._cell_h,
+                                ),
+                                bg,
+                            )
+                        if text.strip() == "" and bg is None:
+                            continue
+                        painter.setFont(self._font_bold if style.bold else self._font_normal)
+                        painter.setPen(fg)
+                        painter.drawText(offset_x + start * self._cell_w, baseline, text)
 
         painter.end()
+
+        shader_enabled = bool(getattr(self._crt_shader_config, "enabled", False))
+        if shader_enabled:
+            frame_index = _safe_int(getattr(self, "_frame_index", 0), 0)
+            target_image = apply_crt_shader(
+                target_image,
+                self._crt_shader_config,
+                frame_index=frame_index,
+            )
+
+        final_painter = QPainter(self)
+        final_painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
+        final_painter.drawImage(0, 0, target_image)
+        final_painter.end()
 
     def _rebuild_metrics(self) -> None:
         if self._font_normal is None:
