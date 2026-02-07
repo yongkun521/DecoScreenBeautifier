@@ -44,6 +44,10 @@ python scripts/compat_report.py path\\to\\compat_report.json
 报告内容包含系统版本、Python 版本、DPI/缩放比例、以及屏幕列表信息，可用于问题反馈。
 
 ## 3. 打包脚本
+入口说明：
+- `DecoScreenBeautifier.exe`：终端宿主入口（Windows Terminal 路线，内置 WT 优先）。
+- `DecoScreenBeautifier_gui.exe`：GUI 宿主入口（方案 B，自带渲染，不依赖终端）。
+
 构建 EXE：
 
 ```powershell
@@ -184,5 +188,5 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe
 
 4) 推荐的临时绕过
 
-- 先运行 `DecoScreenBeautifier_legacy_terminal.exe` 验证是否仅 GUI onefile 入口受影响。
-- 若 legacy 可运行，通常是 GUI 打包运行库冲突，可通过重打包修复。
+- 先运行 `DecoScreenBeautifier_gui.exe` 验证是否仅终端宿主入口受影响。
+- 若 GUI 可运行，通常是终端集成配置或 WT 资产路径问题。

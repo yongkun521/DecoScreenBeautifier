@@ -111,30 +111,6 @@ def make_analysis(entry_script):
         noarchive=False,
     )
 
-a_gui = make_analysis('src/main_gui.py')
-pyz_gui = PYZ(a_gui.pure, a_gui.zipped_data, cipher=block_cipher)
-gui_binaries = _filtered_binaries(a_gui.binaries)
-
-gui_exe = EXE(
-    pyz_gui,
-    a_gui.scripts,
-    gui_binaries,
-    a_gui.datas,
-    [],
-    name='DecoScreenBeautifier',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    console=False,
-    icon=ICON_PATH,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-)
-
 a_legacy = make_analysis('src/main.py')
 pyz_legacy = PYZ(a_legacy.pure, a_legacy.zipped_data, cipher=block_cipher)
 legacy_binaries = _filtered_binaries(a_legacy.binaries)
@@ -145,12 +121,36 @@ legacy_exe = EXE(
     legacy_binaries,
     a_legacy.datas,
     [],
-    name='DecoScreenBeautifier_legacy_terminal',
+    name='DecoScreenBeautifier',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
     console=True,
+    icon=ICON_PATH,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+
+a_gui = make_analysis('src/main_gui.py')
+pyz_gui = PYZ(a_gui.pure, a_gui.zipped_data, cipher=block_cipher)
+gui_binaries = _filtered_binaries(a_gui.binaries)
+
+gui_exe = EXE(
+    pyz_gui,
+    a_gui.scripts,
+    gui_binaries,
+    a_gui.datas,
+    [],
+    name='DecoScreenBeautifier_gui',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=False,
     icon=ICON_PATH,
     disable_windowed_traceback=False,
     argv_emulation=False,

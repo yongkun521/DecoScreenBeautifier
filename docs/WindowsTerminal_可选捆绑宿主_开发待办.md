@@ -120,6 +120,12 @@
 ## 12. PoC 实打包记录（2026-02-07）
 
 - [x] 下载并落地内置 WT x64 资产：`vendor/windows_terminal/x64/WindowsTerminal.exe`
-- [x] 增强包构建完成：`dist/DecoScreenBeautifier.exe`（含 `dist/vendor/windows_terminal/x64`）
+- [x] 增强包构建完成：`dist/DecoScreenBeautifier.exe`（终端宿主入口）+ `dist/DecoScreenBeautifier_gui.exe`（GUI 入口），均含 `dist/vendor/windows_terminal/x64`
 - [x] 增强便携包构建完成：`build/DecoScreenBeautifier_portable_enhanced.zip`
 - [x] PoC 验证完成：`build/validation/wt_bundle/wt_bundle_report.json` 显示 `bundled_wt.available=true`、`portable_profile.profile_found=true`、`route_assessment.recommendation=继续`
+
+## 13. 入口纠偏记录（2026-02-07）
+
+- [x] 修复打包入口语义：`DecoScreenBeautifier.exe` 统一为终端宿主入口（`src/main.py`），GUI 独立为 `DecoScreenBeautifier_gui.exe`（`src/main_gui.py`）
+- [x] 修复冻结模式默认后端：当 `terminal_integration.force_bundled_wt_only=true`（默认）时，冻结版主入口强制走 `windows_terminal`（内置优先）
+- [x] 进程级复核通过：启动 `dist/DecoScreenBeautifier.exe` 后检测到内置 `dist/vendor/windows_terminal/x64/WindowsTerminal.exe` 被拉起

@@ -161,12 +161,18 @@ def _prepare_terminal() -> bool:
         return False
 
     _apply_fps_limit(config_manager.settings)
-    if _is_frozen_legacy_terminal_exe():
-        terminal_settings = config_manager.settings.get("terminal_integration")
-        if isinstance(terminal_settings, dict):
-            backend = terminal_settings.get("backend", "windows_terminal")
-            if backend == "windows_terminal":
-                return False
+
+    terminal_settings = config_manager.settings.get("terminal_integration")
+    if isinstance(terminal_settings, dict):
+        force_bundled_wt_only = bool(
+            terminal_settings.get("force_bundled_wt_only", True)
+        )
+        if getattr(sys, "frozen", False) and force_bundled_wt_only:
+            terminal_settings["enabled"] = True
+            terminal_settings["backend"] = "windows_terminal"
+            terminal_settings["fallback_backend"] = "classic"
+            terminal_settings["prefer_bundled_wt"] = True
+
     return maybe_prepare_terminal(config_manager.settings, sys.argv)
 
 

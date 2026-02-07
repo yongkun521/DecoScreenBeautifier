@@ -137,6 +137,7 @@
             - [x] M4 实施（2026-02-07）：已补齐标准包/增强包分级、启动自检回退提示、WT 验收脚本与文档；增强包实打包后评审结论升级为“继续”
             - [x] PoC 验证（2026-02-07）：已完成内置便携版 Windows Terminal 实打包与验证，启动专用 `Deco` 配置通过（含 `experimental.retroTerminalEffect`，并支持可选 `experimental.pixelShaderPath`）
             - [x] 体验验证（2026-02-07，本机内置+系统 WT）：1080x480 / 1920x480 两档在 `focus/fullscreen` 下 smoke 启动通过（见 `build/validation/wt_bundle/wt_bundle_report.json`）
+            - [x] 入口纠偏（2026-02-07）：`DecoScreenBeautifier.exe` 改为终端宿主入口并强制内置 WT 优先；GUI 入口调整为 `DecoScreenBeautifier_gui.exe`
     - [~] GUI 宿主（方案B：自带渲染，不依赖外部终端）
     - [x] 设计文档（docs/方案B_GUI自带渲染_设计文档.md）
     - [x] 设计文档待办梳理：为可执行项补充方框并校准 4.x 状态
