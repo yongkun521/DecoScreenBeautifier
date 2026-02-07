@@ -99,3 +99,30 @@ python scripts/compat_report.py path\\to\\compat_report.json
 - 默认阈值为：平均 FPS >= 20，平均 CPU <= 85%。
 - 输出 `benchmark_report.json`，包含每个分辨率场景的平均 FPS / CPU / 内存 / P95 帧耗时。
 - 若环境缺少 Qt 运行时（如 `QtCore` DLL 加载失败），报告会标记 `qt_runtime_available=false`。
+
+## 5. Qt 启动失败排查（`DLL load failed while importing QtCore`）
+
+若双击 `DecoScreenBeautifier.exe` 弹出：`Qt runtime check failed: DLL load failed while importing QtCore`，请按以下顺序排查：
+
+1) 确认安装并重启系统（必须重启一次）
+
+```text
+Microsoft Visual C++ Redistributable (2015-2022, x64)
+https://aka.ms/vs/17/release/vc_redist.x64.exe
+```
+
+2) 使用最新打包产物（避免旧 EXE）
+
+- 当前仓库默认产物：`dist/DecoScreenBeautifier.exe`
+- 若你在其它目录有旧拷贝，请先删除旧版本后再测试。
+
+3) 查看启动诊断日志
+
+- 当 Qt 预检查失败时，程序会在项目根目录写入：`qt_runtime_error.log`
+- 该文件包含：`sys._MEIPASS`、Qt DLL 搜索目录、PATH、完整 traceback。
+- 请把该日志内容发给开发者，可快速定位是缺 DLL 还是版本冲突。
+
+4) 推荐的临时绕过
+
+- 先运行 `DecoScreenBeautifier_legacy_terminal.exe` 验证是否仅 GUI onefile 入口受影响。
+- 若 legacy 可运行，通常是 GUI 打包运行库冲突，可通过重打包修复。

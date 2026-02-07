@@ -1,4 +1,5 @@
 import importlib
+import ctypes.util
 import os
 import sys
 import argparse
@@ -18,6 +19,24 @@ REQUIRED_MODULES = {
 }
 
 APP_STARTUP_ERROR_TITLE = "DecoScreenBeautifier Startup Error"
+VC_REDIST_X64_URL = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+_DLL_DIRECTORY_HANDLES: list[object] = []
+_PRELOADED_DLL_HANDLES: list[object] = []
+_QT_RUNTIME_PREPARED = False
+_QT_RUNTIME_PRELOAD_NOTES: list[str] = []
+QT_RUNTIME_PROBE_DLLS = [
+    "Qt6Core.dll",
+    "pyside6.abi3.dll",
+    "shiboken6.abi3.dll",
+    "VCRUNTIME140.dll",
+    "VCRUNTIME140_1.dll",
+    "MSVCP140.dll",
+    "MSVCP140_1.dll",
+    "MSVCP140_2.dll",
+    "concrt140.dll",
+    "icuuc.dll",
+    "python3.dll",
+]
 
 
 def _stderr_write(message: str) -> None:
@@ -49,7 +68,147 @@ def _show_startup_error(message: str, title: str = APP_STARTUP_ERROR_TITLE) -> N
 
 
 def _project_root() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parent.parent
+
+
+def _normalize_windows_path(path: Path) -> str:
+    return os.path.normcase(os.path.normpath(str(path)))
+
+
+def _prepend_path_env(path: Path) -> None:
+    if not path.is_dir():
+        return
+    target = str(path)
+    current = os.environ.get("PATH", "")
+    if not current:
+        os.environ["PATH"] = target
+        return
+    current_parts = [part for part in current.split(os.pathsep) if part]
+    normalized_target = _normalize_windows_path(path)
+    normalized_parts = {
+        os.path.normcase(os.path.normpath(part))
+        for part in current_parts
+    }
+    if normalized_target in normalized_parts:
+        return
+    os.environ["PATH"] = target + os.pathsep + current
+
+
+def _add_windows_dll_directory(path: Path) -> None:
+    if os.name != "nt" or not path.is_dir():
+        return
+    add_dll_directory = getattr(os, "add_dll_directory", None)
+    if add_dll_directory is None:
+        return
+    try:
+        handle = add_dll_directory(str(path))
+    except Exception:
+        return
+    _DLL_DIRECTORY_HANDLES.append(handle)
+
+
+def _iter_qt_dll_dirs() -> list[Path]:
+    candidates: list[Path] = []
+    if getattr(sys, "frozen", False):
+        base_dir = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
+        candidates.extend([base_dir / "PySide6", base_dir / "shiboken6", base_dir])
+    else:
+        for package_name in ("PySide6", "shiboken6"):
+            spec = importlib.util.find_spec(package_name)
+            origin = getattr(spec, "origin", None)
+            if origin:
+                candidates.append(Path(origin).resolve().parent)
+        candidates.append(Path(sys.executable).resolve().parent)
+
+    existing: list[Path] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        if not candidate.is_dir():
+            continue
+        key = _normalize_windows_path(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        existing.append(candidate)
+    return existing
+
+
+def _sanitize_windows_path() -> None:
+    if os.name != "nt":
+        return
+
+    current = os.environ.get("PATH", "")
+    if not current:
+        return
+
+    def _is_conda_segment(segment: str) -> bool:
+        normalized = segment.replace("/", "\\").lower()
+        return (
+            "\\anaconda3" in normalized
+            or "\\miniconda" in normalized
+            or "\\mambaforge" in normalized
+            or "\\conda\\envs\\" in normalized
+        )
+
+    parts = [segment for segment in current.split(os.pathsep) if segment]
+    removed = [segment for segment in parts if _is_conda_segment(segment)]
+    kept = [segment for segment in parts if not _is_conda_segment(segment)]
+    if removed:
+        os.environ["PATH"] = os.pathsep.join(kept)
+        _QT_RUNTIME_PRELOAD_NOTES.append("path_sanitize_removed=")
+        for segment in removed:
+            _QT_RUNTIME_PRELOAD_NOTES.append(f"  {segment}")
+
+
+def _prepare_qt_runtime() -> None:
+    global _QT_RUNTIME_PREPARED
+    if os.name != "nt":
+        return
+    if _QT_RUNTIME_PREPARED:
+        return
+    _sanitize_windows_path()
+    for path in _iter_qt_dll_dirs():
+        _prepend_path_env(path)
+        _add_windows_dll_directory(path)
+    _preload_qt_runtime_dlls()
+    _QT_RUNTIME_PREPARED = True
+
+
+def _preload_qt_runtime_dlls() -> None:
+    if os.name != "nt" or not getattr(sys, "frozen", False):
+        return
+
+    base_dir = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
+    pyside_dir = base_dir / "PySide6"
+    shiboken_dir = base_dir / "shiboken6"
+
+    candidates = [
+        base_dir / "python3.dll",
+        base_dir / "VCRUNTIME140.dll",
+        base_dir / "VCRUNTIME140_1.dll",
+        base_dir / "MSVCP140.dll",
+        base_dir / "MSVCP140_1.dll",
+        base_dir / "MSVCP140_2.dll",
+        base_dir / "concrt140.dll",
+        base_dir / "icuuc.dll",
+        base_dir / "icudt73.dll",
+        shiboken_dir / "shiboken6.abi3.dll",
+        pyside_dir / "pyside6.abi3.dll",
+        pyside_dir / "Qt6Core.dll",
+    ]
+
+    for dll_path in candidates:
+        if not dll_path.is_file():
+            _QT_RUNTIME_PRELOAD_NOTES.append(f"missing: {dll_path}")
+            continue
+        try:
+            handle = ctypes.WinDLL(str(dll_path))
+            _PRELOADED_DLL_HANDLES.append(handle)
+            _QT_RUNTIME_PRELOAD_NOTES.append(f"ok: {dll_path}")
+        except Exception as exc:
+            _QT_RUNTIME_PRELOAD_NOTES.append(f"fail: {dll_path} -> {exc}")
 
 
 def _venv_python() -> Optional[Path]:
@@ -121,7 +280,9 @@ def _ensure_dependencies() -> None:
                 [
                     "Qt runtime check failed:",
                     f"  {qt_runtime_error}",
-                    "Try installing Microsoft Visual C++ Redistributable (2015-2022 x64), then retry.",
+                    "Install or repair Microsoft Visual C++ Redistributable (2015-2022 x64):",
+                    f"  {VC_REDIST_X64_URL}",
+                    "Then retry launching DecoScreenBeautifier.exe.",
                 ]
             )
         )
@@ -129,11 +290,53 @@ def _ensure_dependencies() -> None:
 
 
 def _check_qt_runtime() -> str:
+    _prepare_qt_runtime()
     try:
         import PySide6  # noqa: F401
         from PySide6 import QtCore  # noqa: F401
     except Exception as exc:
-        return str(exc)
+        details = str(exc)
+        if os.name == "nt":
+            try:
+                import time
+                import traceback
+
+                root = _project_root()
+                log_path = root / "qt_runtime_error.log"
+                lines = [
+                    f"time={time.strftime('%Y-%m-%d %H:%M:%S')}",
+                    f"sys.executable={sys.executable}",
+                    f"sys.frozen={getattr(sys, 'frozen', False)}",
+                    f"sys._MEIPASS={getattr(sys, '_MEIPASS', '')}",
+                    "qt_dll_dirs=",
+                ]
+                for path in _iter_qt_dll_dirs():
+                    lines.append(f"  {path}")
+                if _QT_RUNTIME_PRELOAD_NOTES:
+                    lines.append("preload_notes=")
+                    for item in _QT_RUNTIME_PRELOAD_NOTES:
+                        lines.append(f"  {item}")
+                lines.append("dll_probe=")
+                for dll_name in QT_RUNTIME_PROBE_DLLS:
+                    resolved = ctypes.util.find_library(dll_name)
+                    try:
+                        ctypes.WinDLL(dll_name)
+                        load_state = "ok"
+                    except Exception as load_exc:
+                        load_state = f"fail: {load_exc}"
+                    lines.append(f"  {dll_name}: find_library={resolved!r}; load={load_state}")
+                lines.extend(
+                    [
+                        f"PATH={os.environ.get('PATH', '')}",
+                        "traceback=",
+                        traceback.format_exc(),
+                        "",
+                    ]
+                )
+                log_path.write_text("\n".join(lines), encoding="utf-8")
+            except Exception:
+                pass
+        return details
     return ""
 
 

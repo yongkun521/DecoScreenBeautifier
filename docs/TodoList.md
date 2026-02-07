@@ -137,6 +137,14 @@
     - [x] V1：模板选择/最小设置/缩放/窗口持久化
     - [x] V2：像素级 CRT 后处理（曲率/色散/扫描线/噪点/暗角）
     - [x] V2：GUI 版布局编辑器（拖拽/网格对齐/尺寸预览）
+    - [x] 启动健壮性（2026-02-07）：`main_gui.py` 增加 Windows Qt DLL 路径预热（`PATH` + `os.add_dll_directory`）
+    - [x] 启动提示改进（2026-02-07）：Qt 运行时报错弹窗增加 VC++ 2015-2022 x64 官方下载链接
+    - [x] 打包修复（2026-02-07）：`DecoScreenBeautifier.spec` 统一优先使用 PySide6 自带 `VCRUNTIME140*.dll`，规避根目录运行库版本冲突
+    - [x] 启动诊断（2026-02-07）：Qt 预检查失败时写出 `qt_runtime_error.log`（含 `_MEIPASS`/PATH/traceback）
+    - [x] 打包修复（2026-02-07）：移除根目录 `api-ms-win-crt-* / ucrtbase.dll` 注入，仅保留 PySide6 侧 CRT 运行库
+    - [x] 启动诊断（2026-02-07）：新增 DLL 逐项探测与预加载记录（`dll_probe` / `preload_notes`）用于定位 `QtCore` 依赖链失败点
+    - [x] 打包修复（2026-02-07）：`DecoScreenBeautifier.spec` 全面排除 Anaconda 来源 DLL（含 ICU/API-SET），避免 onefile 运行时混装
+    - [x] 启动修复（2026-02-07）：`main_gui.py` 启动前清理 PATH 中 conda 目录，降低 Qt 依赖解析误命中概率
     - [~] 验收：按设计文档 10.1/10.2 逐项验证（已新增自动化脚本与报告产物）
         - [x] `scripts/validate_gui_host.py`：功能验收闭环（metrics/perf/report）
         - [x] `scripts/benchmark_gui_host.py`：性能验收闭环（1080x480/1920x480）
