@@ -26,27 +26,27 @@
 ## 3. 里程碑与待办
 
 ## M1：资产与目录约定（先落地）
-- [ ] 约定内置 WT 目录结构（x64 为主，预留 x86/arm64 扩展位）。
-- [ ] 明确版本文件（如 `wt_version.json`）用于后续升级对比。
-- [ ] 在构建脚本中增加“可选包含 WT 资产”参数（默认可关闭）。
-- [ ] 补齐第三方许可清单入口（至少引用 WT 仓库与许可证信息）。
+- [x] 约定内置 WT 目录结构（x64 为主，预留 x86/arm64 扩展位）。
+- [x] 明确版本文件（如 `wt_version.json`）用于后续升级对比。
+- [x] 在构建脚本中增加“可选包含 WT 资产”参数（默认可关闭）。
+- [x] 补齐第三方许可清单入口（至少引用 WT 仓库与许可证信息）。
 
 ## M2：启动链路改造（核心）
-- [ ] 启动器优先查找项目内置 `WindowsTerminal.exe`。
-- [ ] 内置缺失时回退系统 `wt.exe`（保持现有行为）。
-- [ ] 增加配置开关：
-  - [ ] `terminal_integration.prefer_bundled_wt`（默认 `true`）。
-  - [ ] `terminal_integration.bundled_wt_path`（默认空，自动推断）。
-  - [ ] `terminal_integration.use_wt_portable_mode`（默认 `true`）。
-- [ ] 明确 legacy 入口行为：不再重复拉起、失败弹窗可见、日志可追踪。
+- [x] 启动器优先查找项目内置 `WindowsTerminal.exe`。
+- [x] 内置缺失时回退系统 `wt.exe`（保持现有行为）。
+- [x] 增加配置开关：
+  - [x] `terminal_integration.prefer_bundled_wt`（默认 `true`）。
+  - [x] `terminal_integration.bundled_wt_path`（默认空，自动推断）。
+  - [x] `terminal_integration.use_wt_portable_mode`（默认 `true`）。
+- [x] 明确 legacy 入口行为：不再重复拉起、失败弹窗可见、日志可追踪。
 
 ## M3：配置隔离与复古预设（体验）
-- [ ] 设计并落地专用 WT profile（例如 `DecoScreenBeautifier-CRT`）。
-- [ ] 默认启用复古关键项：
-  - [ ] `experimental.retroTerminalEffect`
-  - [ ] 可选 `experimental.pixelShaderPath`（提供默认占位 shader）
-- [ ] 内置模式下配置与状态目录写入应用目录（Portable 模式）。
-- [ ] 验证不影响用户既有 WT profiles / themes / keybindings。
+- [x] 设计并落地专用 WT profile（例如 `DecoScreenBeautifier-CRT`）。
+- [x] 默认启用复古关键项：
+  - [x] `experimental.retroTerminalEffect`
+  - [x] 可选 `experimental.pixelShaderPath`（提供默认占位 shader）
+- [x] 内置模式下配置与状态目录写入应用目录（Portable 模式）。
+- [x] 验证不影响用户既有 WT profiles / themes / keybindings。
 
 ## M4：发布与验收（可交付）
 - [ ] 打包产物分级：
@@ -88,7 +88,23 @@
 
 ## 8. 本文档对应任务入口
 
-- [ ] 代码实施入口：`src/utils/terminal_launcher.py`
-- [ ] 默认配置入口：`src/config/manager.py`
-- [ ] 集成说明文档：`docs/终端集成与无框方案.md`
-- [ ] 进度总览：`docs/TodoList.md`
+- [x] 代码实施入口：`src/utils/terminal_launcher.py`
+- [x] 默认配置入口：`src/config/manager.py`
+- [x] 集成说明文档：`docs/终端集成与无框方案.md`
+- [x] 进度总览：`docs/TodoList.md`
+
+## 9. M1 + M2 实施记录（2026-02-07）
+
+- [x] 新增版本元信息：`vendor/windows_terminal/wt_version.json`
+- [x] 新增许可证入口：`vendor/windows_terminal/licenses/README.md`
+- [x] 构建脚本支持 `-IncludeBundledWT`：`scripts/build_exe.ps1`、`scripts/build_portable.ps1`
+- [x] 启动器新增内置 WT 查找与可选 portable 标记：`src/utils/terminal_launcher.py`
+- [x] 默认配置补齐三项 WT 相关开关：`src/config/manager.py`
+
+## 10. M3 实施记录（2026-02-07）
+
+- [x] 启动器在命中内置 WT 时自动初始化/更新专用 profile：`DecoScreenBeautifier-CRT`
+- [x] profile 默认写入复古关键项：`experimental.retroTerminalEffect`
+- [x] 增加可选像素着色器路径写入：`experimental.pixelShaderPath`（默认占位 shader：`vendor/windows_terminal/shaders/deco_placeholder.hlsl`）
+- [x] Portable 模式下仅操作内置 WT 目录下 `settings/settings.json`，不写入系统 WT 用户配置目录
+- [x] 默认配置补齐内置 WT profile 初始化参数：`src/config/manager.py`

@@ -132,7 +132,9 @@
             - [x] 方案调研（2026-02-07）：Windows Terminal 可通过 Unpackaged(Zip)+Portable 模式随软件分发，并将 `settings` 与运行状态隔离在应用目录，不干扰用户既有配置
             - [x] 方案决策（2026-02-07）：采用“Windows Terminal 作为可选捆绑宿主”路线（GUI 宿主继续默认入口）
             - [x] 开发待办文档（2026-02-07）：`docs/WindowsTerminal_可选捆绑宿主_开发待办.md`
-            - [ ] PoC 验证：内置便携版 Windows Terminal，启动专用 `Deco` 配置（含 `experimental.retroTerminalEffect` / `experimental.pixelShaderPath`）
+            - [~] M1+M2 实施（2026-02-07）：已完成内置 WT 目录/版本元信息、构建开关、启动器“内置优先+回退+portable”、配置项补齐
+            - [x] M3 实施（2026-02-07）：完成内置 WT 专用 `DecoScreenBeautifier-CRT` profile 自动初始化，默认写入 `experimental.retroTerminalEffect`，并支持可选 `experimental.pixelShaderPath`（含占位 shader）
+            - [~] PoC 验证：内置便携版 Windows Terminal，启动专用 `Deco` 配置（含 `experimental.retroTerminalEffect` / `experimental.pixelShaderPath`）
             - [ ] 体验验证：评估 `focus/fullscreen` 对“无边框副屏”场景是否足够；若不够则继续以 GUI 宿主（方案 B）作为主路线
     - [~] GUI 宿主（方案B：自带渲染，不依赖外部终端）
     - [x] 设计文档（docs/方案B_GUI自带渲染_设计文档.md）
