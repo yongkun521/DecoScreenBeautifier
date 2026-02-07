@@ -10,6 +10,11 @@ from typing import Any, Iterable, Mapping, Optional
 
 import json5
 
+try:
+    import psutil
+except Exception:  # pragma: no cover
+    psutil = None
+
 DEFAULT_WT_TITLE = "DecoScreenBeautifier"
 DEFAULT_WINDOW_TARGET = "new"
 DEFAULT_BUNDLED_PROFILE_NAME = "DecoScreenBeautifier-CRT"
@@ -32,6 +37,7 @@ PYTHON_RELAUNCH_ENV_KEYS = {
     "PYTHONSAFEPATH",
     "PYTHONPLATLIBDIR",
 }
+WT_HOSTED_SENTINEL_ENV_KEY = "DSB_WT_HOSTED"
 
 
 def _is_windows() -> bool:
@@ -39,7 +45,46 @@ def _is_windows() -> bool:
 
 
 def _in_windows_terminal() -> bool:
-    return bool(os.environ.get("WT_SESSION"))
+    if os.environ.get(WT_HOSTED_SENTINEL_ENV_KEY):
+        return True
+
+    if os.environ.get("WT_SESSION"):
+        return True
+
+    term_program = str(os.environ.get("TERM_PROGRAM") or "").strip().lower()
+    if term_program == "windows_terminal":
+        return True
+
+    if psutil is None:
+        return False
+
+    try:
+        current = psutil.Process(os.getpid())
+    except Exception:
+        return False
+
+    terminal_host_names = {
+        "windowsterminal.exe",
+        "openconsole.exe",
+        "wt.exe",
+        "conhost.exe",
+    }
+    node = current
+    for _ in range(5):
+        try:
+            node = node.parent() if node is not None else None
+        except Exception:
+            node = None
+        if node is None:
+            break
+        try:
+            process_name = str(node.name() or "").strip().lower()
+        except Exception:
+            continue
+        if process_name in terminal_host_names:
+            return True
+
+    return False
 
 
 def _application_root() -> Path:
@@ -393,6 +438,7 @@ def _build_child_environment() -> dict[str, str]:
         if key_upper.startswith("PYI_"):
             env.pop(key, None)
             continue
+    env[WT_HOSTED_SENTINEL_ENV_KEY] = "1"
     return env
 
 

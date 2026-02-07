@@ -22,6 +22,7 @@ REQUIRED_MODULES = {
 }
 
 APP_STARTUP_ERROR_TITLE = "DecoScreenBeautifier Legacy Startup Error"
+WT_HOSTED_SENTINEL_ENV_KEY = "DSB_WT_HOSTED"
 
 
 def _project_root() -> Path:
@@ -47,13 +48,45 @@ def _stderr_write(message: str) -> None:
         pass
 
 
+def _append_startup_error_log(message: str) -> None:
+    try:
+        log_path = _project_root() / "legacy_terminal_error.log"
+        with log_path.open("a", encoding="utf-8") as f:
+            f.write(str(message))
+            if not str(message).endswith("\n"):
+                f.write("\n")
+    except Exception:
+        pass
+
+
+def _running_in_terminal_host() -> bool:
+    if os.environ.get(WT_HOSTED_SENTINEL_ENV_KEY):
+        return True
+    if os.environ.get("WT_SESSION"):
+        return True
+    term_program = str(os.environ.get("TERM_PROGRAM") or "").strip().lower()
+    if term_program == "windows_terminal":
+        return True
+    stderr = getattr(sys, "stderr", None)
+    try:
+        if stderr is not None and hasattr(stderr, "isatty") and stderr.isatty():
+            return True
+    except Exception:
+        return False
+    return False
+
+
 def _show_startup_error(message: str, title: str = APP_STARTUP_ERROR_TITLE) -> None:
     text = str(message)
     _stderr_write(text + "\n")
+    _append_startup_error_log(text)
     if os.name != "nt":
         return
+    if _running_in_terminal_host():
+        return
     try:
-        ctypes.windll.user32.MessageBoxW(None, text, title, 0x10)
+        flags = 0x10 | 0x00010000 | 0x00040000
+        ctypes.windll.user32.MessageBoxW(None, text, title, flags)
     except Exception:
         pass
 

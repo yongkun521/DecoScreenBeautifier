@@ -135,3 +135,9 @@
 - [x] 修复 `ModuleNotFoundError: No module named 'encodings'`：在 WT 拉起子进程前清理 PyInstaller 残留环境变量（`PYTHONHOME/PYTHONPATH/_PYI_*/PYI_*`）
 - [x] 修复位置：`src/utils/terminal_launcher.py`（`_build_child_environment` + `subprocess.Popen(..., env=child_env)`）
 - [x] 实测结果：内置 `WindowsTerminal.exe` 拉起后主程序可正常驻留，不再触发 embedded python interpreter 初始化失败
+
+## 15. 灰屏与不可见错误提示修复（2026-02-08）
+
+- [x] 修复 WT 宿主判定稳定性：`src/utils/terminal_launcher.py` 增强 `_in_windows_terminal`（新增 `DSB_WT_HOSTED` 哨兵变量 + 多级父进程链检测）以避免 onefile 场景误判导致的重复拉起。
+- [x] 修复终端内“仅报错音效无可见提示”体验：`src/main.py` 在检测到终端宿主（`WT_SESSION/TERM_PROGRAM/DSB_WT_HOSTED`）时不再弹阻塞 MessageBox，改为 stderr 输出并持续写入 `legacy_terminal_error.log`。
+- [x] 复测结果：增强包重打包通过（`scripts/build_exe.ps1 -IncludeBundledWT`），`scripts/validate_wt_bundle.py --with-smoke-run` 通过，评审结论维持“继续”。

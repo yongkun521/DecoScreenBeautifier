@@ -139,6 +139,7 @@
             - [x] 体验验证（2026-02-07，本机内置+系统 WT）：1080x480 / 1920x480 两档在 `focus/fullscreen` 下 smoke 启动通过（见 `build/validation/wt_bundle/wt_bundle_report.json`）
             - [x] 入口纠偏（2026-02-07）：`DecoScreenBeautifier.exe` 改为终端宿主入口并强制内置 WT 优先；GUI 入口调整为 `DecoScreenBeautifier_gui.exe`
             - [x] 崩溃修复（2026-02-07）：修复内置 WT 启动时 `No module named encodings`（清理继承的 PyInstaller Python 环境变量后再拉起子进程）
+            - [x] 灰屏修复（2026-02-08）：增强 WT 宿主判定（`DSB_WT_HOSTED` + 父进程链）避免重复拉起；终端宿主内异常改为 stderr+日志，避免“有错误音效但无可见弹窗”
     - [~] GUI 宿主（方案B：自带渲染，不依赖外部终端）
     - [x] 设计文档（docs/方案B_GUI自带渲染_设计文档.md）
     - [x] 设计文档待办梳理：为可执行项补充方框并校准 4.x 状态
