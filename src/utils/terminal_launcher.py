@@ -327,7 +327,6 @@ def _apply_bundled_wt_profile_defaults(
     use_pixel_shader = bool(terminal_settings.get("bundled_wt_enable_pixel_shader", False))
 
     if safe_visual_defaults:
-        retro_enabled = False
         use_pixel_shader = False
 
     profile["hidden"] = False

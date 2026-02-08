@@ -20,8 +20,8 @@
                     "face": "Cascadia Mono",
                     "size": 14
                 },
-                "experimental.retroTerminalEffect": false,
-                "retroTerminalEffect": false
+                "experimental.retroTerminalEffect": true,
+                "retroTerminalEffect": true
             }
         ]
     }

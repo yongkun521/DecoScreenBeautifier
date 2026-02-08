@@ -3,6 +3,7 @@ from textual.containers import Grid
 from textual.screen import Screen
 from textual.widgets import Static
 from textual.widgets import Footer, Header
+from typing import Optional
 
 from components.audio import AudioVisualizer
 from components.base import BaseWidget
@@ -29,12 +30,23 @@ class DisplayScreen(Screen):
         self._active_template_classes = []
         self._built_widget_ids = []
 
+    def _set_boot_hint(self, *, visible: bool, message: Optional[str] = None) -> None:
+        try:
+            boot_hint = self.query_one("#p_boot_hint", Static)
+        except Exception:
+            return
+        if message is not None:
+            boot_hint.update(message)
+        boot_hint.display = visible
+
     def compose(self) -> ComposeResult:
         _trace_startup("display.compose: enter")
         yield Header(show_clock=True)
 
         with Grid(id="main_grid"):
-            yield Static("[DecoScreen] Loading widgets...", id="p_boot_hint")
+            boot_hint = Static("[DecoScreen] Loading widgets...", id="p_boot_hint")
+            boot_hint.display = False
+            yield boot_hint
             # 按“可失败组件最后挂载”的策略，避免某个组件异常导致整屏空白。
             for widget in self._safe_build_widgets():
                 yield widget
@@ -95,6 +107,31 @@ class DisplayScreen(Screen):
             _trace_startup(
                 f"display.on_mount: failed to schedule first_paint timer: {type(exc).__name__}: {exc}"
             )
+
+        self._sync_boot_hint_with_layout()
+
+    def _sync_boot_hint_with_layout(self) -> None:
+        visible_widget_ids: list[str] = []
+        try:
+            for widget in self.query(BaseWidget):
+                if widget.display:
+                    visible_widget_ids.append(widget.id or "")
+        except Exception:
+            visible_widget_ids = []
+
+        if visible_widget_ids:
+            self._set_boot_hint(visible=False)
+            _trace_startup(
+                "display.boot_hint: hidden visible_widgets="
+                + ",".join(visible_widget_ids)
+            )
+            return
+
+        self._set_boot_hint(
+            visible=True,
+            message="[DecoScreen] No widgets enabled for current template.",
+        )
+        _trace_startup("display.boot_hint: shown (no visible widgets)")
 
     def _trace_first_paint(self) -> None:
         try:
@@ -192,3 +229,4 @@ class DisplayScreen(Screen):
         )
         for widget in self.query(BaseWidget):
             widget.display = widget.id in active
+        self._sync_boot_hint_with_layout()

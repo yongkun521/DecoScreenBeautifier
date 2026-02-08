@@ -212,3 +212,22 @@
   - `scripts/validate_wt_bundle.py --with-smoke-run --mode focus --mode fullscreen`
   - `dist/DecoScreenBeautifier.exe` 直启（父进程拉起 WT + 子进程入屏）
   - `dist/legacy_terminal_startup_trace.log` 显示 `display.first_paint ... query_all=20`，无未处理异常。
+
+## 2026-02-08 内置 WT 布局与复古效果修复
+- [x] 右上组件错位修复：`src/ui/display.py` 中将 `p_boot_hint` 初始设为 `display=false`，避免其占用网格格位导致主组件布局偏移。
+- [x] “Loading widgets...” 常驻问题修复：新增 `DisplayScreen._sync_boot_hint_with_layout()`，在存在可见业务组件时自动隐藏提示；仅当模板将所有组件都禁用时才显示提示文案。
+- [x] 内置 WT 复古效果恢复：
+  - `src/main.py` 不再在冻结版安全视觉分支中强制关闭 `bundled_wt_retro_effect`。
+  - `src/utils/terminal_launcher.py` 保持安全默认（Acrylic/Pixel Shader 关闭）但允许写入 `retroTerminalEffect=true`。
+- [x] 验证通过（2026-02-08）：
+  - `venv\Scripts\python.exe -m py_compile src\ui\display.py src\main.py src\utils\terminal_launcher.py`
+  - `venv\Scripts\python.exe scripts\validate_wt_bundle.py --with-smoke-run --mode focus --mode fullscreen --output-dir build\validation\wt_bundle_after_fix_smoke`
+  - `build\validation\wt_bundle_after_fix\portable_settings_snapshot.json` 中 `experimental.retroTerminalEffect` 与 `retroTerminalEffect` 均为 `true`。
+
+## 2026-02-08 打包产物更新
+- [x] 执行干净打包：`powershell -ExecutionPolicy Bypass -File scripts\build_exe.ps1 -Clean -IncludeBundledWT`
+- [x] 产物生成：
+  - `dist\DecoScreenBeautifier.exe`
+  - `dist\DecoScreenBeautifier_gui.exe`
+  - `dist\vendor\windows_terminal\x64\*`（含 `.portable`）
+- [x] 路由校验：`venv\Scripts\python.exe scripts\validate_wt_bundle.py --output-dir build\validation\wt_bundle_after_package`，结果为“继续”。

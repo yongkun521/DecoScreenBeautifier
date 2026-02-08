@@ -330,7 +330,6 @@ def _prepare_terminal() -> bool:
         ):
             terminal_settings["bundled_wt_use_acrylic"] = False
             terminal_settings["bundled_wt_opacity"] = 100
-            terminal_settings["bundled_wt_retro_effect"] = False
             terminal_settings["bundled_wt_enable_pixel_shader"] = False
 
         _trace_startup(
