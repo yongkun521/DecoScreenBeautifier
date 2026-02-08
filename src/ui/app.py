@@ -2,8 +2,7 @@ import sys
 import os
 import traceback
 from pathlib import Path
-from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer
+from textual.app import App
 
 # 导入主显示屏幕和编辑器屏幕
 from ui.display import DisplayScreen
@@ -28,6 +27,7 @@ class DecoScreenApp(App):
         ("d", "toggle_dark", "Toggle Dark Mode"),
         ("e", "toggle_editor", "Open Editor"),
         ("t", "toggle_templates", "Open Templates"),
+        ("b", "toggle_wt_border", "Toggle WT Border"),
         ("q", "quit", "Quit Application"),
     ]
 
@@ -172,6 +172,30 @@ class DecoScreenApp(App):
     def action_toggle_templates(self) -> None:
         """打开模板库"""
         self.push_screen(TemplateScreen())
+
+    def _terminal_settings(self) -> dict:
+        settings = self.config_manager.settings.get("terminal_integration", {})
+        if isinstance(settings, dict):
+            return settings
+        return {}
+
+    def action_toggle_wt_border(self) -> None:
+        terminal_settings = self._terminal_settings()
+        backend = terminal_settings.get("backend", "windows_terminal")
+        if backend != "windows_terminal":
+            self.notify("Toggle border is only available in Windows Terminal mode.")
+            return
+        try:
+            from utils.terminal_launcher import toggle_focus_mode_in_running_wt
+        except Exception as exc:
+            self.notify(f"Toggle border unavailable: {exc}")
+            return
+
+        ok, message = toggle_focus_mode_in_running_wt(terminal_settings)
+        if ok:
+            self.notify("Toggled border/focus mode. Drag now if needed.")
+        else:
+            self.notify(message)
 
     def apply_template(self, template_id: str) -> None:
         """应用模板并刷新当前显示"""

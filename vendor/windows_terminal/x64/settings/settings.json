@@ -24,5 +24,13 @@
                 "retroTerminalEffect": true
             }
         ]
-    }
+    },
+    "actions": [
+        {
+            "command": "toggleFocusMode",
+            "keys": [
+                "alt+shift+f"
+            ]
+        }
+    ]
 }

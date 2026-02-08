@@ -66,6 +66,14 @@ Footer {
     color: #00FFFF;       /* 霓虹蓝 */
 }
 
+#btn_toggle_border {
+    dock: bottom;
+    height: 1;
+    background: #101820;
+    color: #7DF9FF;
+    border-top: solid #00FFFF;
+}
+
 Screen.theme-neon Header {
     background: #1a1a1a;
     color: #FF00FF;

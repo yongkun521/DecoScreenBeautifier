@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual.containers import Grid
 from textual.screen import Screen
-from textual.widgets import Static
+from textual.widgets import Static, Button
 from textual.widgets import Footer, Header
 from typing import Optional
 
@@ -24,6 +24,10 @@ except Exception:
 
 class DisplayScreen(Screen):
     """主显示界面，用于展示各类 CLI 组件。"""
+
+    BINDINGS = [
+        ("b", "toggle_wt_border", "Toggle Border"),
+    ]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -51,11 +55,24 @@ class DisplayScreen(Screen):
             for widget in self._safe_build_widgets():
                 yield widget
 
+        yield Button("Toggle Border (B)", id="btn_toggle_border")
         yield Footer()
         _trace_startup(
             "display.compose: yielded widgets="
             + ",".join(self._built_widget_ids)
         )
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id != "btn_toggle_border":
+            return
+        self.action_toggle_wt_border()
+
+    def action_toggle_wt_border(self) -> None:
+        action = getattr(self.app, "action_toggle_wt_border", None)
+        if callable(action):
+            action()
+            return
+        self.notify("Toggle border action unavailable.")
 
     def _safe_build_widgets(self):
         specs = [

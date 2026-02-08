@@ -302,6 +302,185 @@ def _ensure_profile_list(document: dict[str, Any]) -> list[dict[str, Any]]:
     return profiles["list"]
 
 
+def _normalize_key_binding(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    if not text:
+        return ""
+    return text.replace(" ", "")
+
+
+def _extract_actions(document: dict[str, Any]) -> list[dict[str, Any]]:
+    actions = document.get("actions")
+    if isinstance(actions, list):
+        normalized = [item for item in actions if isinstance(item, dict)]
+        document["actions"] = normalized
+        return normalized
+
+    keybindings = document.get("keybindings")
+    if isinstance(keybindings, list):
+        normalized = [item for item in keybindings if isinstance(item, dict)]
+        document["keybindings"] = normalized
+        return normalized
+
+    document["actions"] = []
+    return document["actions"]
+
+
+def _action_is_toggle_focus_mode(item: Mapping[str, Any]) -> bool:
+    command = item.get("command")
+    if isinstance(command, str):
+        return command.strip().lower() == "togglefocusmode"
+    if isinstance(command, dict):
+        action_name = str(command.get("action") or "").strip().lower()
+        return action_name == "togglefocusmode"
+    return False
+
+
+def _ensure_focus_toggle_binding(
+    settings_document: dict[str, Any],
+    terminal_settings: Mapping[str, Any],
+) -> None:
+    if not bool(
+        terminal_settings.get("bundled_wt_enable_focus_toggle_binding", True)
+    ):
+        return
+
+    configured_key = terminal_settings.get("focus_mode_toggle_key", "alt+shift+f")
+    key_text = _normalize_key_binding(configured_key)
+    if not key_text:
+        return
+
+    actions = _extract_actions(settings_document)
+    existing_toggle = [item for item in actions if _action_is_toggle_focus_mode(item)]
+    if existing_toggle:
+        primary = existing_toggle[0]
+        primary["keys"] = [key_text]
+        for duplicate in existing_toggle[1:]:
+            try:
+                actions.remove(duplicate)
+            except ValueError:
+                continue
+        return
+
+    actions.append(
+        {
+            "command": "toggleFocusMode",
+            "keys": [key_text],
+        }
+    )
+
+
+def _resolve_virtual_key(key_token: str) -> Optional[int]:
+    key = str(key_token or "").strip().lower()
+    if not key:
+        return None
+
+    special_keys = {
+        "tab": 0x09,
+        "enter": 0x0D,
+        "return": 0x0D,
+        "esc": 0x1B,
+        "escape": 0x1B,
+        "space": 0x20,
+        "left": 0x25,
+        "up": 0x26,
+        "right": 0x27,
+        "down": 0x28,
+        "insert": 0x2D,
+        "delete": 0x2E,
+        "home": 0x24,
+        "end": 0x23,
+        "pgup": 0x21,
+        "pageup": 0x21,
+        "pgdn": 0x22,
+        "pagedown": 0x22,
+    }
+    if key in special_keys:
+        return special_keys[key]
+
+    if key.startswith("f") and key[1:].isdigit():
+        index = int(key[1:])
+        if 1 <= index <= 24:
+            return 0x6F + index
+
+    if len(key) == 1 and "a" <= key <= "z":
+        return ord(key.upper())
+    if len(key) == 1 and "0" <= key <= "9":
+        return ord(key)
+
+    return None
+
+
+def _send_hotkey(binding: str) -> tuple[bool, str]:
+    text = _normalize_key_binding(binding)
+    if not text:
+        return False, "Empty hotkey binding"
+
+    parts = [part for part in text.split("+") if part]
+    if not parts:
+        return False, "Invalid hotkey binding"
+
+    modifier_map = {
+        "ctrl": 0x11,
+        "control": 0x11,
+        "shift": 0x10,
+        "alt": 0x12,
+    }
+    modifiers: list[int] = []
+    main_key_token: Optional[str] = None
+    for part in parts:
+        if part in modifier_map:
+            modifiers.append(modifier_map[part])
+        else:
+            main_key_token = part
+
+    if main_key_token is None:
+        return False, "No main key in hotkey binding"
+
+    main_key = _resolve_virtual_key(main_key_token)
+    if main_key is None:
+        return False, f"Unsupported key token: {main_key_token}"
+
+    try:
+        import ctypes
+    except Exception as exc:
+        return False, f"ctypes unavailable: {exc}"
+
+    KEYEVENTF_KEYUP = 0x0002
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+
+    for mod_key in modifiers:
+        user32.keybd_event(mod_key, 0, 0, 0)
+    user32.keybd_event(main_key, 0, 0, 0)
+    user32.keybd_event(main_key, 0, KEYEVENTF_KEYUP, 0)
+    for mod_key in reversed(modifiers):
+        user32.keybd_event(mod_key, 0, KEYEVENTF_KEYUP, 0)
+    return True, "Hotkey sent"
+
+
+def toggle_focus_mode_in_running_wt(
+    terminal_settings: Mapping[str, Any],
+) -> tuple[bool, str]:
+    if not _is_windows():
+        return False, "Only supported on Windows"
+
+    settings = _normalize_settings(terminal_settings)
+    if settings.get("backend") not in {None, "", "windows_terminal"}:
+        return False, "Current backend is not windows_terminal"
+
+    if not _in_windows_terminal():
+        return False, "Not running inside Windows Terminal"
+
+    key_text = _normalize_key_binding(settings.get("focus_mode_toggle_key", "alt+shift+f"))
+    if not key_text:
+        key_text = "alt+shift+f"
+
+    sent, message = _send_hotkey(key_text)
+    if sent:
+        return True, "Sent focus-mode hotkey"
+    return False, message
+
+
 def _upsert_bundled_wt_profile(
     profile_list: list[dict[str, Any]],
     profile_name: str,
@@ -405,6 +584,7 @@ def _ensure_bundled_wt_profile(
         terminal_settings,
         pixel_shader_path=pixel_shader_path,
     )
+    _ensure_focus_toggle_binding(settings_document, terminal_settings)
 
     try:
         _write_json_document(settings_path, settings_document)

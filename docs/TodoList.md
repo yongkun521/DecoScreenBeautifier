@@ -231,3 +231,28 @@
   - `dist\DecoScreenBeautifier_gui.exe`
   - `dist\vendor\windows_terminal\x64\*`（含 `.portable`）
 - [x] 路由校验：`venv\Scripts\python.exe scripts\validate_wt_bundle.py --output-dir build\validation\wt_bundle_after_package`，结果为“继续”。
+
+## 2026-02-08 内置 WT 无边框窗口拖动方案评估
+- [x] 问题确认：当前默认 `terminal_integration.focus_mode=true` 会在启动时追加 `--focus`，隐藏标题栏/标签栏后无法直接鼠标拖动窗口。
+- [x] 方案梳理：
+  - 方案 A（推荐）：将 `focus_mode=false`，恢复标题栏拖动；可保留 `maximized=true` 维持近似无框观感。
+  - 方案 B（折中）：保持 `focus_mode=true`，但自动写入一个 `toggleFocusMode` 快捷键（如 `Alt+Shift+F`），需要拖动时先切回可拖状态。
+- [x] 方案 B 落地（默认无框）：
+  - `src/config/manager.py` 新增 `bundled_wt_enable_focus_toggle_binding=true` 与 `focus_mode_toggle_key="alt+shift+f"` 默认项（保持 `focus_mode=true`）。
+  - `src/utils/terminal_launcher.py` 在内置 WT profile 初始化时自动写入 `toggleFocusMode` 快捷键。
+  - `src/utils/terminal_launcher.py` 新增运行时切换能力：通过发送快捷键触发 Focus Mode 开关（用于边框开/关切换）。
+  - `src/ui/app.py` 新增全局动作 `action_toggle_wt_border`（绑定 `B` 键）。
+  - `src/ui/display.py` 底部新增按钮 `Toggle Border (B)`，点击可切换边框。
+  - `src/ui/styles.tcss` 新增 `#btn_toggle_border` 样式，固定在底部工具栏区域。
+- [x] 验证通过：
+  - `venv\\Scripts\\python.exe -m py_compile src\\config\\manager.py src\\utils\\terminal_launcher.py src\\ui\\app.py src\\ui\\display.py`
+  - `venv\\Scripts\\python.exe scripts\\validate_wt_bundle.py --output-dir build\\validation\\wt_bundle_after_toggle_border`
+  - `build\\validation\\wt_bundle_after_toggle_border\\portable_settings_snapshot.json` 中已包含 `actions -> toggleFocusMode -> alt+shift+f`。
+
+## 2026-02-08 打包产物更新（含 Toggle Border）
+- [x] 执行干净打包：`powershell -ExecutionPolicy Bypass -File scripts\\build_exe.ps1 -Clean -IncludeBundledWT`
+- [x] 产物生成：
+  - `dist\\DecoScreenBeautifier.exe`
+  - `dist\\DecoScreenBeautifier_gui.exe`
+  - `dist\\vendor\\windows_terminal\\x64\\*`（含 `.portable`）
+- [x] 路由校验：`venv\\Scripts\\python.exe scripts\\validate_wt_bundle.py --output-dir build\\validation\\wt_bundle_after_package_toggle_border`，结果为“继续”。
