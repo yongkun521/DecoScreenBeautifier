@@ -67,11 +67,31 @@ Footer {
 }
 
 #btn_toggle_border {
-    dock: bottom;
     height: 1;
     background: #101820;
     color: #7DF9FF;
+}
+
+#bottom_toolbar {
+    dock: bottom;
+    height: 1;
+    layout: horizontal;
+    width: 100%;
+    background: #101820;
     border-top: solid #00FFFF;
+}
+
+.toolbar-btn {
+    width: 1fr;
+    height: 1;
+    background: #101820;
+    color: #7DF9FF;
+    border: none;
+}
+
+#app_footer {
+    dock: bottom;
+    height: 1;
 }
 
 Screen.theme-neon Header {

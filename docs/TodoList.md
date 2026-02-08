@@ -256,3 +256,22 @@
   - `dist\\DecoScreenBeautifier_gui.exe`
   - `dist\\vendor\\windows_terminal\\x64\\*`（含 `.portable`）
 - [x] 路由校验：`venv\\Scripts\\python.exe scripts\\validate_wt_bundle.py --output-dir build\\validation\\wt_bundle_after_package_toggle_border`，结果为“继续”。
+
+## 2026-02-08 显示区标题栏/工具栏切换增强
+- [x] 底部工具栏扩展为三个按钮：
+  - `Toggle Border (B)`：切换 WT Focus/边框模式。
+  - `Toggle Header (H)`：切换上方标题栏显示状态。
+  - `Toggle Toolbar (M)`：切换下方工具栏显示状态。
+- [x] 交互增强：当工具栏隐藏后，鼠标点击显示区任意位置可自动恢复工具栏。
+- [x] 实现位置：
+  - `src/ui/display.py`：新增按钮、快捷键绑定与显示状态切换逻辑。
+  - `src/ui/styles.tcss`：新增 `#bottom_toolbar` 与 `.toolbar-btn` 样式。
+- [x] 语法校验：`venv\\Scripts\\python.exe -m py_compile src\\ui\\display.py src\\ui\\app.py src\\config\\manager.py src\\utils\\terminal_launcher.py`
+
+## 2026-02-08 打包产物更新（含 Header/Toolbar Toggle）
+- [x] 执行干净打包：`powershell -ExecutionPolicy Bypass -File scripts\\build_exe.ps1 -Clean -IncludeBundledWT`
+- [x] 产物生成：
+  - `dist\\DecoScreenBeautifier.exe`
+  - `dist\\DecoScreenBeautifier_gui.exe`
+  - `dist\\vendor\\windows_terminal\\x64\\*`（含 `.portable`）
+- [x] 路由校验：`venv\\Scripts\\python.exe scripts\\validate_wt_bundle.py --output-dir build\\validation\\wt_bundle_after_package_header_toolbar_toggle`，结果为“继续”。

@@ -1,8 +1,9 @@
 from textual.app import ComposeResult
-from textual.containers import Grid
+from textual.containers import Grid, Horizontal
 from textual.screen import Screen
 from textual.widgets import Static, Button
 from textual.widgets import Footer, Header
+from textual import events
 from typing import Optional
 
 from components.audio import AudioVisualizer
@@ -27,12 +28,16 @@ class DisplayScreen(Screen):
 
     BINDINGS = [
         ("b", "toggle_wt_border", "Toggle Border"),
+        ("h", "toggle_header", "Toggle Header"),
+        ("m", "toggle_toolbar", "Toggle Toolbar"),
     ]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._active_template_classes = []
         self._built_widget_ids = []
+        self._header_visible = True
+        self._toolbar_visible = True
 
     def _set_boot_hint(self, *, visible: bool, message: Optional[str] = None) -> None:
         try:
@@ -45,7 +50,7 @@ class DisplayScreen(Screen):
 
     def compose(self) -> ComposeResult:
         _trace_startup("display.compose: enter")
-        yield Header(show_clock=True)
+        yield Header(show_clock=True, id="app_header")
 
         with Grid(id="main_grid"):
             boot_hint = Static("[DecoScreen] Loading widgets...", id="p_boot_hint")
@@ -55,17 +60,50 @@ class DisplayScreen(Screen):
             for widget in self._safe_build_widgets():
                 yield widget
 
-        yield Button("Toggle Border (B)", id="btn_toggle_border")
-        yield Footer()
+        with Horizontal(id="bottom_toolbar"):
+            yield Button("Toggle Border (B)", id="btn_toggle_border", classes="toolbar-btn")
+            yield Button("Toggle Header (H)", id="btn_toggle_header", classes="toolbar-btn")
+            yield Button("Toggle Toolbar (M)", id="btn_toggle_toolbar", classes="toolbar-btn")
+        yield Footer(id="app_footer")
         _trace_startup(
             "display.compose: yielded widgets="
             + ",".join(self._built_widget_ids)
         )
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id != "btn_toggle_border":
+    def _set_header_visible(self, visible: bool) -> None:
+        self._header_visible = bool(visible)
+        try:
+            header = self.query_one("#app_header", Header)
+        except Exception:
             return
-        self.action_toggle_wt_border()
+        header.display = self._header_visible
+
+    def _set_toolbar_visible(self, visible: bool) -> None:
+        self._toolbar_visible = bool(visible)
+        try:
+            toolbar = self.query_one("#bottom_toolbar", Horizontal)
+        except Exception:
+            toolbar = None
+        if toolbar is not None:
+            toolbar.display = self._toolbar_visible
+        try:
+            footer = self.query_one("#app_footer", Footer)
+        except Exception:
+            footer = None
+        if footer is not None:
+            footer.display = self._toolbar_visible
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        button_id = event.button.id
+        if button_id == "btn_toggle_border":
+            self.action_toggle_wt_border()
+            return
+        if button_id == "btn_toggle_header":
+            self.action_toggle_header()
+            return
+        if button_id == "btn_toggle_toolbar":
+            self.action_toggle_toolbar()
+            return
 
     def action_toggle_wt_border(self) -> None:
         action = getattr(self.app, "action_toggle_wt_border", None)
@@ -73,6 +111,32 @@ class DisplayScreen(Screen):
             action()
             return
         self.notify("Toggle border action unavailable.")
+
+    def action_toggle_header(self) -> None:
+        self._set_header_visible(not self._header_visible)
+        if self._header_visible:
+            self.notify("Title bar shown.")
+        else:
+            self.notify("Title bar hidden.")
+
+    def action_toggle_toolbar(self) -> None:
+        self._set_toolbar_visible(not self._toolbar_visible)
+        if self._toolbar_visible:
+            self.notify("Toolbar shown.")
+            return
+        self.notify("Toolbar hidden. Click anywhere to restore.")
+
+    def on_mouse_down(self, event: events.MouseDown) -> None:
+        if self._toolbar_visible:
+            return
+        try:
+            target_id = event.widget.id if event.widget is not None else None
+        except Exception:
+            target_id = None
+        if target_id in {"btn_toggle_toolbar", "btn_toggle_header", "btn_toggle_border"}:
+            return
+        self._set_toolbar_visible(True)
+        self.notify("Toolbar restored.")
 
     def _safe_build_widgets(self):
         specs = [
