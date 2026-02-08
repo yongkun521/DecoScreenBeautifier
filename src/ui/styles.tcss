@@ -4,6 +4,7 @@
 Screen {
     background: #0D0208;  /* 深黑色背景 */
     color: #00FF41;       /* 赛博朋克绿 */
+    overflow: auto;
 }
 
 /* 主题模板 */
@@ -210,6 +211,14 @@ Screen.theme-night Footer {
     column-span: 3;
     row-span: 2;
     border: solid #5EE7FF;
+}
+
+#p_boot_hint {
+    column-span: 6;
+    row-span: 1;
+    color: #D0D0D0;
+    text-style: bold;
+    content-align: center middle;
 }
 
 /* 布局模板：不同屏幕比例 */

@@ -2,6 +2,7 @@
 
 import importlib.util
 from pathlib import Path
+from PyInstaller.utils.hooks import collect_submodules
 
 block_cipher = None
 ICON_PATH = None
@@ -27,7 +28,7 @@ COMMON_HIDDENIMPORTS = [
     'json5',
     'appdirs',
     'PySide6',
-]
+] + collect_submodules('rich._unicode_data')
 
 
 def _pyside6_package_dir() -> Path | None:

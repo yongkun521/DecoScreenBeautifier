@@ -1,5 +1,6 @@
 import sys
 import os
+import traceback
 from pathlib import Path
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer
@@ -10,6 +11,12 @@ from ui.editor import EditorScreen
 from ui.templates import TemplateScreen
 from config.manager import ConfigManager
 from core.presets import get_font_preset, get_style_preset
+
+try:
+    from utils.startup_trace import trace_startup as _trace_startup
+except Exception:
+    def _trace_startup(message: str) -> None:
+        return None
 
 class DecoScreenApp(App):
     """DecoScreenBeautifier 主应用程序"""
@@ -35,8 +42,17 @@ class DecoScreenApp(App):
 
     def on_mount(self) -> None:
         """应用启动时挂载主屏幕"""
+        _trace_startup("app.on_mount: enter")
         # 加载配置
         self.config_manager.load_settings()
+        gui_host_settings = self.config_manager.settings.get("gui_host", {})
+        terminal_settings = self.config_manager.settings.get("terminal_integration", {})
+        _trace_startup(
+            "app.on_mount: settings "
+            f"template={self.config_manager.settings.get('template_id')} "
+            f"gui_host.enabled={gui_host_settings.get('enabled') if isinstance(gui_host_settings, dict) else ''} "
+            f"terminal.enabled={terminal_settings.get('enabled') if isinstance(terminal_settings, dict) else ''}"
+        )
         self._refresh_visual_settings()
         self._start_performance_monitor()
         
@@ -45,6 +61,58 @@ class DecoScreenApp(App):
         
         self.display_screen = DisplayScreen()
         self.push_screen(self.display_screen)
+        _trace_startup("app.on_mount: display screen pushed")
+        try:
+            self.set_timer(2.0, self._trace_mount_health)
+        except Exception:
+            pass
+
+    def _trace_mount_health(self) -> None:
+        try:
+            screen_name = type(self.screen).__name__
+        except Exception:
+            screen_name = "<unknown>"
+
+        widget_count = -1
+        display_screen_widget_count = -1
+        screen_is_display = False
+        app_screen_id = None
+        display_screen_id = None
+        try:
+            app_screen_id = id(self.screen)
+            widget_count = len(list(self.screen.query("*")))
+        except Exception:
+            pass
+        try:
+            if self.display_screen is not None:
+                display_screen_id = id(self.display_screen)
+                display_screen_widget_count = len(list(self.display_screen.query("*")))
+                screen_is_display = self.screen is self.display_screen
+        except Exception:
+            pass
+
+        _trace_startup(
+            "app.mount_health: "
+            f"active_screen={screen_name} "
+            f"widget_count={widget_count} "
+            f"display_widget_count={display_screen_widget_count} "
+            f"screen_is_display={screen_is_display} "
+            f"app_screen_id={app_screen_id} display_screen_id={display_screen_id}"
+        )
+
+    def _handle_exception(self, error: Exception) -> None:
+        _trace_startup(
+            f"app.handle_exception: {type(error).__name__}: {error}"
+        )
+        try:
+            tb_text = "".join(
+                traceback.format_exception(type(error), error, error.__traceback__)
+            )
+            for line in tb_text.splitlines():
+                _trace_startup(f"app.traceback: {line}")
+        except Exception:
+            pass
+        super()._handle_exception(error)
 
     def _start_performance_monitor(self) -> None:
         settings = self.config_manager.settings.get("performance_monitor", {})

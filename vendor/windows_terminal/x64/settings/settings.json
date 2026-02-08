@@ -14,14 +14,14 @@
                 "name": "DecoScreenBeautifier-CRT",
                 "hidden": false,
                 "colorScheme": "Campbell",
-                "useAcrylic": true,
-                "opacity": 88,
+                "useAcrylic": false,
+                "opacity": 100,
                 "font": {
                     "face": "Cascadia Mono",
                     "size": 14
                 },
-                "experimental.retroTerminalEffect": true,
-                "retroTerminalEffect": true
+                "experimental.retroTerminalEffect": false,
+                "retroTerminalEffect": false
             }
         ]
     }

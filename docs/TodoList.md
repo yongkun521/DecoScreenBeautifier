@@ -186,3 +186,29 @@
 - [ ] 待开始
 - [x] 已完成
 - [~] 进行中
+## 2026-02-08 Windows Terminal 灰屏修复记录
+- [x] 复现并定位：`DecoScreenBeautifier.exe` 在部分机器通过内置 `WindowsTerminal.exe` 直接拉起时，会出现灰屏无光标（有错误音效但无可见弹窗）。
+- [x] 根因修复：`src/utils/terminal_launcher.py` 改为优先调用内置 `wt.exe`（CLI 入口）而不是直接调用 `WindowsTerminal.exe`，并兼容目录自动识别 `wt.exe/WindowsTerminal.exe`。
+- [x] 启动链路增强：新增 `BUNDLED_WT_EXECUTABLE_NAMES` 与更多候选路径，缺失提示文案同步更新为支持两种可执行文件名。
+- [x] 验证通过：执行 `scripts/validate_wt_bundle.py --with-smoke-run --mode focus --mode fullscreen`，报告显示 `selection.selected_path` 已指向 `vendor/windows_terminal/x64/wt.exe` 且 smoke 全通过。
+
+## 2026-02-08 灰屏问题续修（中断后继续）
+- [x] 启动错误可见性修复：`src/main.py` 中冻结版（`sys.frozen=True`）不再因“终端宿主误判”而跳过 `MessageBox`，避免出现“有错误音效但无可见弹窗”。
+- [x] 启动链路追踪：新增 `legacy_terminal_startup_trace.log` 追踪日志（并兜底写入 `%TEMP%`），记录 `main: enter`、`terminal_prepared`、`app.run start/end`、异常与错误提示触发点。
+- [x] 依赖降级：将 `pyaudio`、`cv2`、`Pillow` 从强制启动依赖中移除，改为组件级降级（音频组件自动 mock，图像组件显示可用性提示），避免因单组件依赖缺失导致整屏灰屏。
+- [x] 组件容错：`src/ui/display.py` 改为安全构造组件（单个组件初始化失败不阻塞全屏挂载）。
+- [x] 终端链路回归：`scripts/validate_wt_bundle.py --with-smoke-run --mode focus --mode fullscreen` 通过，仍为“继续”。
+- [ ] 待用户现场复测：若仍灰屏，需回传 `%TEMP%\legacy_terminal_startup_trace.log` 与 `legacy_terminal_error.log`（项目目录或 `%LOCALAPPDATA%\DecoTeam\DecoScreenBeautifier`）用于精确定位。
+
+## 2026-02-08 灰屏根因闭环（Rich Unicode 动态模块）
+- [x] 根因定位：通过 `app._handle_exception` 启动追踪发现渲染期异常 `ModuleNotFoundError: No module named 'rich._unicode_data.unicode17-0-0'`，导致 Textual 合成器首帧崩溃并呈现灰屏。
+- [x] 打包修复：`DecoScreenBeautifier.spec` 增加 `collect_submodules('rich._unicode_data')`，将 Rich 的 Unicode 数据动态子模块完整打入 onefile。
+- [x] 稳定性增强：
+  - `src/components/base.py` 增加 `_safe_update_content`（组件更新异常隔离与降级占位）。
+  - `src/components/audio.py` 冻结版默认 mock（可通过 `DSB_ENABLE_AUDIO_CAPTURE=1` 开启真实采集）。
+  - `src/utils/terminal_launcher.py` 增加 WT 启动命令追踪，便于现场排查。
+- [x] 视觉安全默认：冻结版默认 `bundled_wt_safe_visual_defaults=true`，并将内置 WT profile 强制为 `useAcrylic=false`、`opacity=100`、`retro=false`。
+- [x] 复测通过（2026-02-08）：
+  - `scripts/validate_wt_bundle.py --with-smoke-run --mode focus --mode fullscreen`
+  - `dist/DecoScreenBeautifier.exe` 直启（父进程拉起 WT + 子进程入屏）
+  - `dist/legacy_terminal_startup_trace.log` 显示 `display.first_paint ... query_all=20`，无未处理异常。

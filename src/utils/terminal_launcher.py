@@ -15,6 +15,12 @@ try:
 except Exception:  # pragma: no cover
     psutil = None
 
+try:
+    from utils.startup_trace import trace_startup as _trace_startup
+except Exception:
+    def _trace_startup(message: str) -> None:
+        return None
+
 DEFAULT_WT_TITLE = "DecoScreenBeautifier"
 DEFAULT_WINDOW_TARGET = "new"
 DEFAULT_BUNDLED_PROFILE_NAME = "DecoScreenBeautifier-CRT"
@@ -23,9 +29,16 @@ DEFAULT_PIXEL_SHADER_FILE_NAME = "deco_placeholder.hlsl"
 DEFAULT_PIXEL_SHADER_RELATIVE_PATH = (
     Path("vendor") / "windows_terminal" / "shaders" / DEFAULT_PIXEL_SHADER_FILE_NAME
 )
+BUNDLED_WT_EXECUTABLE_NAMES = (
+    "wt.exe",
+    "WindowsTerminal.exe",
+)
 BUNDLED_WT_RELATIVE_CANDIDATES = (
+    Path("vendor") / "windows_terminal" / "wt.exe",
     Path("vendor") / "windows_terminal" / "WindowsTerminal.exe",
+    Path("vendor") / "windows_terminal" / "x64" / "wt.exe",
     Path("vendor") / "windows_terminal" / "x64" / "WindowsTerminal.exe",
+    Path("windows_terminal") / "wt.exe",
     Path("windows_terminal") / "WindowsTerminal.exe",
 )
 PYTHON_RELAUNCH_ENV_KEYS = {
@@ -103,7 +116,11 @@ def _normalize_bundled_wt_path(path_value: Any) -> Optional[Path]:
     if not path.is_absolute():
         path = _application_root() / path
     if path.is_dir():
-        path = path / "WindowsTerminal.exe"
+        for executable_name in BUNDLED_WT_EXECUTABLE_NAMES:
+            candidate = path / executable_name
+            if candidate.is_file():
+                return candidate
+        path = path / BUNDLED_WT_EXECUTABLE_NAMES[0]
     return path
 
 
@@ -175,6 +192,16 @@ def _select_wt_executable(
             return bundled_path, True
 
     return None, False
+
+
+def _prefer_wt_cli_executable(path_text: str) -> str:
+    path = Path(path_text).resolve()
+    if path.name.lower() != "windowsterminal.exe":
+        return str(path)
+    candidate = path.with_name("wt.exe")
+    if candidate.is_file():
+        return str(candidate)
+    return str(path)
 
 
 def _ensure_wt_portable_mode(
@@ -293,19 +320,30 @@ def _apply_bundled_wt_profile_defaults(
     *,
     pixel_shader_path: Optional[Path],
 ) -> None:
+    safe_visual_defaults = bool(
+        terminal_settings.get("bundled_wt_safe_visual_defaults", False)
+    )
     retro_enabled = bool(terminal_settings.get("bundled_wt_retro_effect", True))
     use_pixel_shader = bool(terminal_settings.get("bundled_wt_enable_pixel_shader", False))
+
+    if safe_visual_defaults:
+        retro_enabled = False
+        use_pixel_shader = False
 
     profile["hidden"] = False
     profile["colorScheme"] = str(
         terminal_settings.get("bundled_wt_color_scheme", "Campbell")
     )
-    profile["useAcrylic"] = bool(terminal_settings.get("bundled_wt_use_acrylic", True))
-    opacity = terminal_settings.get("bundled_wt_opacity", 88)
+    profile["useAcrylic"] = (
+        False
+        if safe_visual_defaults
+        else bool(terminal_settings.get("bundled_wt_use_acrylic", True))
+    )
+    opacity = 100 if safe_visual_defaults else terminal_settings.get("bundled_wt_opacity", 88)
     try:
         profile["opacity"] = max(0, min(100, int(opacity)))
     except (TypeError, ValueError):
-        profile["opacity"] = 88
+        profile["opacity"] = 100 if safe_visual_defaults else 88
     font = profile.get("font")
     if not isinstance(font, dict):
         font = {}
@@ -319,6 +357,12 @@ def _apply_bundled_wt_profile_defaults(
 
     profile["experimental.retroTerminalEffect"] = retro_enabled
     profile["retroTerminalEffect"] = retro_enabled
+
+    if safe_visual_defaults:
+        profile.pop("backgroundImage", None)
+        profile.pop("backgroundImageOpacity", None)
+        profile.pop("backgroundImageStretchMode", None)
+        profile.pop("backgroundImageAlignment", None)
 
     if use_pixel_shader and pixel_shader_path is not None:
         shader_text = str(pixel_shader_path)
@@ -414,7 +458,7 @@ def _warn_wt_unavailable(terminal_settings: Mapping[str, Any]) -> None:
     checked = ", ".join(str(path) for path in candidates)
     sys.stderr.write(
         "Windows Terminal not found (bundled/system); continuing in current console. "
-        "To use bundled WT, place WindowsTerminal.exe in vendor/windows_terminal/x64. "
+        "To use bundled WT, place wt.exe (or WindowsTerminal.exe) in vendor/windows_terminal/x64. "
         f"Checked bundled candidates: {checked}.\n"
     )
 
@@ -516,8 +560,15 @@ def maybe_launch_in_windows_terminal(
         _warn_wt_unavailable(terminal_settings)
         return False
 
+    _trace_startup(
+        f"wt.launcher: selected_exe={wt_exe} using_bundled={using_bundled}"
+    )
+
     if (not using_bundled) and bundled_wt_exe is None and system_wt_exe:
         _warn_bundled_wt_fallback(terminal_settings, system_wt_path=system_wt_exe)
+
+    wt_exe = _prefer_wt_cli_executable(wt_exe)
+    _trace_startup(f"wt.launcher: normalized_exe={wt_exe}")
 
     _ensure_wt_portable_mode(
         wt_exe,
@@ -532,12 +583,19 @@ def maybe_launch_in_windows_terminal(
             launch_settings["profile"] = profile_name
 
     args = _build_wt_command(wt_exe, launch_settings, argv)
+    _trace_startup(
+        "wt.launcher: command=" + " ".join(f'"{arg}"' if " " in arg else arg for arg in args)
+    )
     child_env = _build_child_environment()
     try:
         subprocess.Popen(args, env=child_env)
     except OSError as exc:
+        _trace_startup(
+            f"wt.launcher: popen failed {type(exc).__name__}: {exc}"
+        )
         sys.stderr.write(f"Failed to launch Windows Terminal: {exc}\n")
         return False
+    _trace_startup("wt.launcher: launched")
     return True
 
 

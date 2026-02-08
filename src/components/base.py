@@ -1,8 +1,15 @@
 from textual.widgets import Static
 from textual.reactive import reactive
 from textual.message import Message
+from rich.align import Align
 from rich.text import Text
 import random
+
+try:
+    from utils.startup_trace import trace_startup as _trace_startup
+except Exception:
+    def _trace_startup(message: str) -> None:
+        return None
 
 class BaseWidget(Static):
     """
@@ -28,12 +35,14 @@ class BaseWidget(Static):
         self._timer = None
         self._visual_preset = {}
         self._style_preset = {}
+        self._runtime_error_count = 0
+        self._runtime_error_silenced = False
 
     def on_mount(self) -> None:
         """组件挂载时启动定时更新"""
         if self._update_interval > 0:
-            self._timer = self.set_interval(self._update_interval, self.update_content)
-        self.update_content()  # 初始更新
+            self._timer = self.set_interval(self._update_interval, self._safe_update_content)
+        self._safe_update_content()  # 初始更新
 
     def update_content(self) -> None:
         """
@@ -42,16 +51,62 @@ class BaseWidget(Static):
         """
         pass
 
+    def _safe_update_content(self) -> None:
+        if self._runtime_error_silenced:
+            return
+        try:
+            self.update_content()
+        except Exception as exc:
+            self._runtime_error_count += 1
+            widget_name = type(self).__name__
+            widget_id = self.id or "<no-id>"
+            if self._runtime_error_count <= 3 or self._runtime_error_count % 50 == 0:
+                _trace_startup(
+                    "widget.update_error: "
+                    f"{widget_name}#{widget_id} "
+                    f"count={self._runtime_error_count} "
+                    f"{type(exc).__name__}: {exc}"
+                )
+                try:
+                    if self.app is not None:
+                        self.app.log(
+                            f"Widget update failed: {widget_name}#{widget_id}: "
+                            f"{type(exc).__name__}: {exc}"
+                        )
+                except Exception:
+                    pass
+
+            if self._runtime_error_count >= 8:
+                self._runtime_error_silenced = True
+                if self._timer:
+                    try:
+                        self._timer.stop()
+                    except Exception:
+                        pass
+
+            try:
+                self.update(
+                    Align.center(
+                        Text(
+                            f"{widget_name} unavailable: {type(exc).__name__}",
+                            style="bold red",
+                        ),
+                        vertical="middle",
+                    )
+                )
+            except Exception:
+                pass
+
     def set_visual_preset(self, preset: dict) -> None:
         """设置渲染字符/样式预设"""
         self._visual_preset = preset or {}
-        self.update_content()
+        self._safe_update_content()
 
     def set_style_preset(self, preset: dict) -> None:
         """设置样式 Token 预设"""
         self._style_preset = preset or {}
         self._apply_style_preset()
-        self.update_content()
+        self._safe_update_content()
 
     def get_visual_preset(self) -> dict:
         """获取当前预设，如果未设置则尝试读取 App 全局预设"""
@@ -102,7 +157,7 @@ class BaseWidget(Static):
         if self._timer:
             self._timer.stop()
         if interval > 0:
-            self._timer = self.set_interval(interval, self.update_content)
+            self._timer = self.set_interval(interval, self._safe_update_content)
 
     def export_render_grid(
         self,
