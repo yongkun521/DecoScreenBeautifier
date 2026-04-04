@@ -279,5 +279,5 @@
 ## 2026-04-04 项目现状回顾与路线调整
 - [x] 现状确认：`dist\\DecoScreenBeautifier.exe`（内置 Windows Terminal 宿主）已成为当前实际主入口，且用户本机双击运行效果稳定、观感满足预期。
 - [x] 路线确认：`dist\\DecoScreenBeautifier_gui.exe`（方案 B）当前观感明显不理想，不再作为推荐使用的回退方案。
-- [ ] 后续收口：停止默认打包 `DecoScreenBeautifier_gui.exe`，收敛为以 WT 宿主为主的单主入口发布。
-- [ ] 后续收口：同步清理构建脚本、`DecoScreenBeautifier.spec`、README 与相关文档中“GUI 为默认入口/建议回退”的旧描述。
+- [x] 收口完成（2026-04-04）：`DecoScreenBeautifier.spec` 已停止默认打包 `DecoScreenBeautifier_gui.exe`，收敛为以 WT 宿主为主的单主入口发布。
+- [~] 文档收口（2026-04-04）：已更新 README、`docs/DecoTerminal_实用化补充.md`、`docs/WindowsTerminal_可选捆绑宿主_开发待办.md` 等关键说明；历史设计/验收文档中的 GUI 记录保留作为归档参考。

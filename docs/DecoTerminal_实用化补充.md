@@ -46,7 +46,7 @@ python scripts/compat_report.py path\\to\\compat_report.json
 ## 3. 打包脚本
 入口说明：
 - `DecoScreenBeautifier.exe`：终端宿主入口（Windows Terminal 路线，内置 WT 优先）。
-- `DecoScreenBeautifier_gui.exe`：GUI 宿主入口（方案 B，自带渲染，不依赖终端）。
+- `src/main_gui.py` / GUI 宿主源码：历史保留分支，当前不再默认打包为发布 EXE。
 
 构建 EXE：
 
@@ -60,7 +60,7 @@ python scripts/compat_report.py path\\to\\compat_report.json
 .\\scripts\\build_exe.ps1 -IncludeBundledWT
 ```
 
-指定内置 WT 资产来源目录（目录下应包含 `WindowsTerminal.exe`）：
+指定内置 WT 资产来源目录（目录下应包含 `wt.exe` 或 `WindowsTerminal.exe`）：
 
 ```powershell
 .\\scripts\\build_exe.ps1 -IncludeBundledWT -BundledWTSource "vendor\\windows_terminal\\x64"
@@ -164,9 +164,9 @@ python scripts/compat_report.py path\\to\\compat_report.json
 - 输出 `benchmark_report.json`，包含每个分辨率场景的平均 FPS / CPU / 内存 / P95 帧耗时。
 - 若环境缺少 Qt 运行时（如 `QtCore` DLL 加载失败），报告会标记 `qt_runtime_available=false`。
 
-## 7. Qt 启动失败排查（`DLL load failed while importing QtCore`）
+## 7. Qt 启动失败排查（历史 GUI 路线）
 
-若双击 `DecoScreenBeautifier.exe` 弹出：`Qt runtime check failed: DLL load failed while importing QtCore`，请按以下顺序排查：
+本节仅在你手动运行 GUI 源码/自定义打包 GUI 宿主时参考；当前默认发布入口 `dist/DecoScreenBeautifier.exe` 不依赖 Qt。
 
 1) 确认安装并重启系统（必须重启一次）
 
@@ -175,10 +175,10 @@ Microsoft Visual C++ Redistributable (2015-2022, x64)
 https://aka.ms/vs/17/release/vc_redist.x64.exe
 ```
 
-2) 使用最新打包产物（避免旧 EXE）
+2) 使用最新产物或源码环境（避免旧 GUI EXE）
 
-- 当前仓库默认产物：`dist/DecoScreenBeautifier.exe`
-- 若你在其它目录有旧拷贝，请先删除旧版本后再测试。
+- 当前仓库默认发布产物：`dist/DecoScreenBeautifier.exe`
+- GUI 路线若仍需验证，请从源码入口 `src/main_gui.py` 或你自行构建的 GUI EXE 测试。
 
 3) 查看启动诊断日志
 
@@ -186,7 +186,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe
 - 该文件包含：`sys._MEIPASS`、Qt DLL 搜索目录、PATH、完整 traceback。
 - 请把该日志内容发给开发者，可快速定位是缺 DLL 还是版本冲突。
 
-4) 推荐的临时绕过
+4) 当前主线发布问题优先排查方向
 
-- 先运行 `DecoScreenBeautifier_gui.exe` 验证是否仅终端宿主入口受影响。
-- 若 GUI 可运行，通常是终端集成配置或 WT 资产路径问题。
+- 若 `dist/DecoScreenBeautifier.exe` 启动效果异常，优先检查 `dist/vendor/windows_terminal/` 是否随包分发完整。
+- 若缺少内置 WT，程序会退回系统 `wt.exe`；此时观感和配置隔离都可能与发布包预期不一致。

@@ -59,7 +59,9 @@ pip install pyinstaller
 pyinstaller DecoScreenBeautifier.spec
 ```
 
-构建完成后，可执行文件位于 `dist/DecoScreenBeautifier/DecoScreenBeautifier.exe`。
+构建完成后，主入口可执行文件位于 `dist/DecoScreenBeautifier.exe`。
+
+若需要分发“开箱即用”的内置 Windows Terminal 体验，还需要一并分发 `dist/vendor/windows_terminal/` 目录。
 
 ## 📄 许可证
 
