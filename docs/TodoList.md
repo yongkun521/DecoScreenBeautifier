@@ -281,3 +281,8 @@
 - [x] 路线确认：`dist\\DecoScreenBeautifier_gui.exe`（方案 B）当前观感明显不理想，不再作为推荐使用的回退方案。
 - [x] 收口完成（2026-04-04）：`DecoScreenBeautifier.spec` 已停止默认打包 `DecoScreenBeautifier_gui.exe`，收敛为以 WT 宿主为主的单主入口发布。
 - [~] 文档收口（2026-04-04）：已更新 README、`docs/DecoTerminal_实用化补充.md`、`docs/WindowsTerminal_可选捆绑宿主_开发待办.md` 等关键说明；历史设计/验收文档中的 GUI 记录保留作为归档参考。
+
+## 2026-04-05 商业化备忘
+- [x] 新增商业化备忘文档：`docs/商业化思路与定价备忘.md`
+- [x] 当前建议结论：短期不上 Steam 也完全可行；优先验证独立渠道售卖。
+- [x] 当前建议定价：`39 元首发 / 49 元常规`，海外对应 `$5.99 / $7.99`。
