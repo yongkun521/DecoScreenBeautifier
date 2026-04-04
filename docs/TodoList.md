@@ -275,3 +275,9 @@
   - `dist\\DecoScreenBeautifier_gui.exe`
   - `dist\\vendor\\windows_terminal\\x64\\*`（含 `.portable`）
 - [x] 路由校验：`venv\\Scripts\\python.exe scripts\\validate_wt_bundle.py --output-dir build\\validation\\wt_bundle_after_package_header_toolbar_toggle`，结果为“继续”。
+
+## 2026-04-04 项目现状回顾与路线调整
+- [x] 现状确认：`dist\\DecoScreenBeautifier.exe`（内置 Windows Terminal 宿主）已成为当前实际主入口，且用户本机双击运行效果稳定、观感满足预期。
+- [x] 路线确认：`dist\\DecoScreenBeautifier_gui.exe`（方案 B）当前观感明显不理想，不再作为推荐使用的回退方案。
+- [ ] 后续收口：停止默认打包 `DecoScreenBeautifier_gui.exe`，收敛为以 WT 宿主为主的单主入口发布。
+- [ ] 后续收口：同步清理构建脚本、`DecoScreenBeautifier.spec`、README 与相关文档中“GUI 为默认入口/建议回退”的旧描述。
