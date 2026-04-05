@@ -197,12 +197,34 @@ class DecoScreenApp(App):
         else:
             self.notify(message)
 
+    def action_zoom_in(self) -> None:
+        self._adjust_terminal_zoom(zoom_in=True)
+
+    def action_zoom_out(self) -> None:
+        self._adjust_terminal_zoom(zoom_in=False)
+
+    def _adjust_terminal_zoom(self, *, zoom_in: bool) -> None:
+        terminal_settings = self._terminal_settings()
+        backend = terminal_settings.get("backend", "windows_terminal")
+        if backend != "windows_terminal":
+            self.notify("Zoom buttons are only available in Windows Terminal mode.")
+            return
+        try:
+            from utils.terminal_launcher import adjust_zoom_in_running_wt
+        except Exception as exc:
+            self.notify(f"Zoom action unavailable: {exc}")
+            return
+
+        ok, message = adjust_zoom_in_running_wt(terminal_settings, zoom_in=zoom_in)
+        if ok:
+            self.notify("Zoomed in." if zoom_in else "Zoomed out.")
+        else:
+            self.notify(message)
+
     def apply_template(self, template_id: str) -> None:
         """应用模板并刷新当前显示"""
-        template = self.config_manager.apply_template(template_id)
+        self.config_manager.apply_template(template_id)
         self._refresh_visual_settings()
-        if self.display_screen:
-            self.display_screen.apply_template(template)
 
 if __name__ == "__main__":
     app = DecoScreenApp()

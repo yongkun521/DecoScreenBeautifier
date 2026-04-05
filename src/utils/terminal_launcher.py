@@ -394,6 +394,11 @@ def _resolve_virtual_key(key_token: str) -> Optional[int]:
         "pageup": 0x21,
         "pgdn": 0x22,
         "pagedown": 0x22,
+        "minus": 0xBD,
+        "-": 0xBD,
+        "equal": 0xBB,
+        "equals": 0xBB,
+        "=": 0xBB,
     }
     if key in special_keys:
         return special_keys[key]
@@ -437,6 +442,16 @@ def _send_hotkey(binding: str) -> tuple[bool, str]:
     if main_key_token is None:
         return False, "No main key in hotkey binding"
 
+    shifted_key_aliases = {
+        "plus": "equal",
+        "_": "minus",
+    }
+    shifted_token = shifted_key_aliases.get(main_key_token)
+    if shifted_token:
+        main_key_token = shifted_token
+        if modifier_map["shift"] not in modifiers:
+            modifiers.append(modifier_map["shift"])
+
     main_key = _resolve_virtual_key(main_key_token)
     if main_key is None:
         return False, f"Unsupported key token: {main_key_token}"
@@ -478,6 +493,34 @@ def toggle_focus_mode_in_running_wt(
     sent, message = _send_hotkey(key_text)
     if sent:
         return True, "Sent focus-mode hotkey"
+    return False, message
+
+
+def adjust_zoom_in_running_wt(
+    terminal_settings: Mapping[str, Any],
+    *,
+    zoom_in: bool,
+) -> tuple[bool, str]:
+    if not _is_windows():
+        return False, "Only supported on Windows"
+
+    settings = _normalize_settings(terminal_settings)
+    if settings.get("backend") not in {None, "", "windows_terminal"}:
+        return False, "Current backend is not windows_terminal"
+
+    if not _in_windows_terminal():
+        return False, "Not running inside Windows Terminal"
+
+    key_name = "zoom_in_key" if zoom_in else "zoom_out_key"
+    default_key = "ctrl+plus" if zoom_in else "ctrl+minus"
+    key_text = _normalize_key_binding(settings.get(key_name, default_key))
+    if not key_text:
+        key_text = default_key
+
+    sent, message = _send_hotkey(key_text)
+    if sent:
+        direction = "in" if zoom_in else "out"
+        return True, f"Sent zoom-{direction} hotkey"
     return False, message
 
 

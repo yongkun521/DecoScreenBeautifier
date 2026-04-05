@@ -1,4 +1,6 @@
 import os
+import sys
+from pathlib import Path
 
 from rich.align import Align
 from rich.text import Text
@@ -48,7 +50,8 @@ class ImageWidget(BaseWidget):
             )
             return
 
-        if not self.image_path or not os.path.exists(self.image_path):
+        resolved_path = self._resolve_image_path(self.image_path)
+        if resolved_path is None or not resolved_path.exists():
             error_color = self.get_style_color("danger", "red")
             self.update(
                 Align.center(Text("No Image Loaded", style=error_color), vertical="middle")
@@ -69,7 +72,7 @@ class ImageWidget(BaseWidget):
         charset = preset.get("image_chars") if preset else None
 
         self.ascii_art = self.processor.process_image(
-            self.image_path,
+            str(resolved_path),
             width=render_w,
             height=render_h,
             charset=charset,
@@ -87,3 +90,37 @@ class ImageWidget(BaseWidget):
             scale = 1.0
         return max(0.5, min(scale, 2.0))
 
+    def _resolve_image_path(self, image_path: str | None) -> Path | None:
+        raw_path = str(image_path or "").strip()
+        if not raw_path:
+            return None
+
+        candidate = Path(raw_path).expanduser()
+        candidates = []
+        if candidate.is_absolute():
+            candidates.append(candidate)
+        else:
+            candidates.append(Path.cwd() / candidate)
+            app = getattr(self, "app", None)
+            config_manager = getattr(app, "config_manager", None)
+            data_dir = getattr(config_manager, "data_dir", None)
+            if data_dir:
+                candidates.append(Path(data_dir) / candidate)
+            if getattr(sys, "frozen", False):
+                candidates.append(Path(sys.executable).resolve().parent / candidate)
+            else:
+                candidates.append(Path(__file__).resolve().parents[2] / candidate)
+
+        seen = set()
+        for path in candidates:
+            try:
+                resolved = path.resolve()
+            except Exception:
+                resolved = path
+            key = str(resolved)
+            if key in seen:
+                continue
+            seen.add(key)
+            if resolved.exists():
+                return resolved
+        return candidates[0] if candidates else None

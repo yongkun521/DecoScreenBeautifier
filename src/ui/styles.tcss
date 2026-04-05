@@ -48,6 +48,11 @@ Screen.theme-night {
     color: #C0C0C0;
 }
 
+Screen.theme-redline-2077 {
+    background: #120407;
+    color: #FF6678;
+}
+
 /* 头部样式 */
 Header {
     dock: top;
@@ -67,26 +72,32 @@ Footer {
 }
 
 #btn_toggle_border {
-    height: 1;
+    height: 3;
     background: #101820;
     color: #7DF9FF;
 }
 
 #bottom_toolbar {
     dock: bottom;
-    height: 1;
+    height: 3;
     layout: horizontal;
     width: 100%;
+    padding: 0 1;
     background: #101820;
     border-top: solid #00FFFF;
 }
 
 .toolbar-btn {
     width: 1fr;
-    height: 1;
+    height: 3;
     background: #101820;
     color: #7DF9FF;
     border: none;
+    content-align: center middle;
+}
+
+.toolbar-btn-compact {
+    width: 10;
 }
 
 #app_footer {
@@ -142,6 +153,12 @@ Screen.theme-night Header {
     border-bottom: solid #444444;
 }
 
+Screen.theme-redline-2077 Header {
+    background: #23070C;
+    color: #FF6678;
+    border-bottom: double #FF9C54;
+}
+
 Screen.theme-neon Footer {
     background: #1a1a1a;
     color: #00FFFF;
@@ -180,6 +197,61 @@ Screen.theme-aurora Footer {
 Screen.theme-night Footer {
     background: #121620;
     color: #A0A0A0;
+}
+
+Screen.theme-redline-2077 Footer {
+    background: #23070C;
+    color: #FF9C54;
+}
+
+Screen.theme-redline-2077 #bottom_toolbar {
+    background: #23070C;
+    border-top: solid #FF9C54;
+}
+
+Screen.theme-redline-2077 .toolbar-btn {
+    background: #23070C;
+    color: #FFB46B;
+}
+
+Screen.theme-redline-2077 #p_hardware,
+Screen.theme-redline-2077 .component-hardware {
+    border: heavy #FF6678;
+}
+
+Screen.theme-redline-2077 #p_network,
+Screen.theme-redline-2077 .component-network {
+    border: heavy #FF9C54;
+}
+
+Screen.theme-redline-2077 #p_clock,
+Screen.theme-redline-2077 .component-clock {
+    border: heavy #FFE066;
+}
+
+Screen.theme-redline-2077 #p_audio,
+Screen.theme-redline-2077 .component-audio {
+    border: heavy #FF3355;
+}
+
+Screen.theme-redline-2077 #p_image,
+Screen.theme-redline-2077 .component-image {
+    border: heavy #FF6678;
+}
+
+Screen.theme-redline-2077 #p_ticker,
+Screen.theme-redline-2077 .component-ticker {
+    border: double #FF9C54;
+}
+
+Screen.theme-redline-2077 #p_badge,
+Screen.theme-redline-2077 .component-badge {
+    border: solid #FFE066;
+}
+
+Screen.theme-redline-2077 #p_stream,
+Screen.theme-redline-2077 .component-stream {
+    border: solid #FF6678;
 }
 
 /* 主网格布局 */
@@ -238,6 +310,38 @@ Screen.theme-night Footer {
 #p_stream {
     column-span: 3;
     row-span: 2;
+    border: solid #5EE7FF;
+}
+
+.component-hardware {
+    border: heavy #00FF41;
+}
+
+.component-network {
+    border: heavy #00FFFF;
+}
+
+.component-clock {
+    border: heavy #FF00FF;
+}
+
+.component-audio {
+    border: heavy #FFD700;
+}
+
+.component-image {
+    border: heavy #00FF41;
+}
+
+.component-ticker {
+    border: solid #00FFFF;
+}
+
+.component-badge {
+    border: solid #FF00FF;
+}
+
+.component-stream {
     border: solid #5EE7FF;
 }
 
@@ -444,6 +548,20 @@ Screen.layout-strip-plus #p_stream { column-span: 12; row-span: 1; }
     border: double #B967FF;
 }
 
+.grid-spacer {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.component-error {
+    border: solid #FF5555;
+    color: #FF9C9C;
+    padding: 0 1;
+    margin: 0 1;
+}
+
 /* 编辑器样式 */
 #editor_layout {
     height: 100%;
@@ -522,6 +640,10 @@ Screen.layout-strip-plus #p_stream { column-span: 12; row-span: 1; }
     height: 1fr;
     border: solid #444;
     padding: 0 1;
+}
+
+#btn_remove_selected {
+    margin-top: 1;
 }
 
 /* 模板选择界面 */

@@ -8,6 +8,15 @@ from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, Input, Label, ListItem, ListView, Static
 
 from config.manager import ConfigManager
+from core.layout_config import (
+    BASE_COMPONENTS,
+    build_default_layout,
+    cells_for_pos,
+    default_span_for_component,
+    grid_size_for_layout_class,
+    layout_usage,
+    sanitize_layout_data,
+)
 from core.presets import DEFAULT_TEMPLATE_ID
 
 
@@ -36,135 +45,6 @@ COMPONENT_TOOLS: List[ComponentTool] = [
     ComponentTool("badge", "Status Badge", "StatusBadge", "p_badge", "variant-compact", default_span=(2, 1)),
     ComponentTool("stream", "Signal Stream", "DataStreamWidget", "p_stream", "variant-glow", default_span=(4, 2)),
 ]
-
-DEFAULT_ACTIVE_COMPONENTS = ["p_hardware", "p_network", "p_clock", "p_audio", "p_image"]
-
-BASE_COMPONENTS: Dict[str, str] = {
-    "p_hardware": "HardwareMonitor",
-    "p_network": "NetworkMonitor",
-    "p_clock": "ClockWidget",
-    "p_audio": "AudioVisualizer",
-    "p_image": "ImageWidget",
-    "p_ticker": "InfoTicker",
-    "p_badge": "StatusBadge",
-    "p_stream": "DataStreamWidget",
-}
-
-LAYOUT_GRID_SIZES: Dict[str, Tuple[int, int]] = {
-    "layout-ultrawide": (12, 3),
-    "layout-ultrawide-plus": (12, 4),
-    "layout-wide": (8, 4),
-    "layout-wide-plus": (8, 5),
-    "layout-portrait": (4, 8),
-    "layout-portrait-plus": (4, 10),
-    "layout-tall": (3, 10),
-    "layout-square": (6, 6),
-    "layout-strip": (12, 2),
-    "layout-strip-plus": (12, 3),
-}
-
-DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
-    "layout-ultrawide": {
-        "p_hardware": (4, 2),
-        "p_network": (4, 1),
-        "p_clock": (4, 1),
-        "p_audio": (8, 1),
-        "p_image": (12, 1),
-        "p_ticker": (12, 1),
-        "p_badge": (3, 1),
-        "p_stream": (4, 2),
-    },
-    "layout-ultrawide-plus": {
-        "p_hardware": (4, 2),
-        "p_network": (4, 1),
-        "p_clock": (4, 1),
-        "p_audio": (8, 1),
-        "p_image": (12, 1),
-        "p_ticker": (9, 1),
-        "p_badge": (3, 1),
-        "p_stream": (6, 1),
-    },
-    "layout-wide": {
-        "p_hardware": (4, 2),
-        "p_network": (4, 1),
-        "p_clock": (4, 1),
-        "p_audio": (8, 1),
-        "p_image": (8, 1),
-        "p_ticker": (8, 1),
-        "p_badge": (2, 1),
-        "p_stream": (4, 2),
-    },
-    "layout-wide-plus": {
-        "p_hardware": (4, 2),
-        "p_network": (4, 1),
-        "p_clock": (4, 1),
-        "p_audio": (8, 1),
-        "p_image": (8, 1),
-        "p_ticker": (8, 1),
-        "p_badge": (2, 1),
-        "p_stream": (8, 1),
-    },
-    "layout-portrait": {
-        "p_hardware": (4, 2),
-        "p_network": (4, 1),
-        "p_clock": (4, 1),
-        "p_audio": (4, 2),
-        "p_image": (4, 2),
-        "p_ticker": (4, 1),
-        "p_badge": (4, 1),
-        "p_stream": (4, 2),
-    },
-    "layout-portrait-plus": {
-        "p_hardware": (4, 3),
-        "p_network": (4, 1),
-        "p_clock": (4, 1),
-        "p_audio": (4, 2),
-        "p_image": (4, 2),
-        "p_ticker": (4, 1),
-        "p_badge": (4, 1),
-        "p_stream": (4, 4),
-    },
-    "layout-tall": {
-        "p_hardware": (3, 3),
-        "p_network": (3, 1),
-        "p_clock": (3, 1),
-        "p_audio": (3, 3),
-        "p_image": (3, 2),
-        "p_ticker": (3, 1),
-        "p_badge": (3, 1),
-        "p_stream": (3, 3),
-    },
-    "layout-square": {
-        "p_hardware": (3, 2),
-        "p_network": (3, 1),
-        "p_clock": (3, 1),
-        "p_audio": (6, 1),
-        "p_image": (6, 3),
-        "p_ticker": (6, 1),
-        "p_badge": (6, 1),
-        "p_stream": (6, 2),
-    },
-    "layout-strip": {
-        "p_hardware": (3, 1),
-        "p_network": (3, 1),
-        "p_clock": (3, 1),
-        "p_audio": (3, 1),
-        "p_image": (12, 1),
-        "p_ticker": (12, 1),
-        "p_badge": (3, 1),
-        "p_stream": (6, 1),
-    },
-    "layout-strip-plus": {
-        "p_hardware": (4, 1),
-        "p_network": (6, 1),
-        "p_clock": (6, 1),
-        "p_audio": (12, 1),
-        "p_image": (12, 1),
-        "p_ticker": (9, 1),
-        "p_badge": (3, 1),
-        "p_stream": (12, 1),
-    },
-}
 
 TOKEN_SET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
@@ -205,12 +85,14 @@ class EditorScreen(Screen):
                 yield Static("", id="canvas_grid")
                 yield Label("Components", id="canvas_components_title")
                 yield ListView(id="component_list")
+                yield Button("Delete Selected", variant="error", id="btn_remove_selected")
 
             with Vertical(id="properties"):
                 yield Label("Properties", id="prop_title")
                 yield Static("No component selected.", id="prop_selected")
                 yield Label("Grid", classes="prop_section")
                 yield Label("", id="prop_grid")
+                yield Label("", id="prop_usage")
                 yield Label("Position (0-based)", classes="prop_section")
                 yield Label("Column", classes="prop_label")
                 yield Input(placeholder="Column", id="prop_col")
@@ -220,6 +102,8 @@ class EditorScreen(Screen):
                 yield Input(placeholder="Column Span", id="prop_col_span")
                 yield Label("Row Span", classes="prop_label")
                 yield Input(placeholder="Row Span", id="prop_row_span")
+                yield Label("Image Path (ImageWidget only)", classes="prop_section")
+                yield Input(placeholder="Leave blank to use built-in logo", id="prop_image_path")
                 yield Button("Apply Changes", variant="primary", id="btn_apply")
                 yield Button("Remove Component", variant="error", id="btn_remove")
                 yield Button("Save Layout", variant="primary", id="btn_save")
@@ -251,7 +135,7 @@ class EditorScreen(Screen):
             await self._handle_add_component()
         elif button_id == "btn_apply":
             await self._handle_apply_changes()
-        elif button_id == "btn_remove":
+        elif button_id in {"btn_remove", "btn_remove_selected"}:
             await self._handle_remove_component()
         elif button_id == "btn_save":
             self.action_save_layout()
@@ -283,75 +167,10 @@ class EditorScreen(Screen):
         self._apply_theme_class()
 
     def _build_default_layout(self) -> Dict[str, object]:
-        layout_class = self.template.get("layout_class")
-        cols, rows = self._grid_size_for_class(layout_class)
-        variant_map = self.template.get("component_variants", {}) if self.template else {}
-        components: List[Dict[str, object]] = []
-        active_components = self.template.get("active_components") if self.template else None
-        active_ids = active_components or DEFAULT_ACTIVE_COMPONENTS
-        for base_id in active_ids:
-            component_type = BASE_COMPONENTS.get(base_id)
-            if not component_type:
-                continue
-            col_span, row_span = self._default_span(layout_class, base_id)
-            components.append(
-                {
-                    "id": base_id,
-                    "type": component_type,
-                    "variant": variant_map.get(base_id),
-                    "pos": [0, 0, col_span, row_span],
-                }
-            )
-        self._auto_place_components(components, cols, rows)
-        return {
-            "name": f"Layout {self.template.get('name', DEFAULT_TEMPLATE_ID)}",
-            "template_id": self.template.get("id", DEFAULT_TEMPLATE_ID),
-            "layout_class": layout_class,
-            "grid_size": {"cols": cols, "rows": rows},
-            "components": components,
-        }
+        return build_default_layout(self.template)
 
     def _sanitize_layout(self, layout_data: Dict[str, object]) -> Dict[str, object]:
-        if not isinstance(layout_data, dict):
-            return self._build_default_layout()
-        grid_size = layout_data.get("grid_size", {}) if isinstance(layout_data.get("grid_size"), dict) else {}
-        cols = self._safe_int(grid_size.get("cols"), 0)
-        rows = self._safe_int(grid_size.get("rows"), 0)
-        if cols <= 0 or rows <= 0:
-            layout_class = self.template.get("layout_class")
-            cols, rows = self._grid_size_for_class(layout_class)
-        layout_data["grid_size"] = {"cols": cols, "rows": rows}
-        components = layout_data.get("components")
-        if not isinstance(components, list):
-            layout_data["components"] = []
-        else:
-            clean_components: List[Dict[str, object]] = []
-            for component in components:
-                if not isinstance(component, dict):
-                    continue
-                comp_id = str(component.get("id", "")).strip()
-                if not comp_id:
-                    continue
-                component["id"] = comp_id
-                pos = component.get("pos", [0, 0, 1, 1])
-                if not isinstance(pos, list):
-                    pos = [0, 0, 1, 1]
-                while len(pos) < 4:
-                    pos.append(1)
-                col = self._safe_int(pos[0], 0)
-                row = self._safe_int(pos[1], 0)
-                col_span = max(1, self._safe_int(pos[2], 1))
-                row_span = max(1, self._safe_int(pos[3], 1))
-                col = max(0, min(col, cols - 1))
-                row = max(0, min(row, rows - 1))
-                col_span = max(1, min(col_span, cols - col))
-                row_span = max(1, min(row_span, rows - row))
-                component["pos"] = [col, row, col_span, row_span]
-                clean_components.append(component)
-            layout_data["components"] = clean_components
-        layout_data.setdefault("template_id", self.template.get("id", DEFAULT_TEMPLATE_ID))
-        layout_data.setdefault("layout_class", self.template.get("layout_class"))
-        return layout_data
+        return sanitize_layout_data(layout_data, self.template)
 
     def _apply_theme_class(self) -> None:
         theme_class = self.template.get("theme_class") if self.template else None
@@ -378,10 +197,12 @@ class EditorScreen(Screen):
         font_preset = settings.get("font_preset", "default")
         style_preset = settings.get("style_preset", "default")
         global_scale = settings.get("global_scale", 1.0)
+        used, total, free = layout_usage(self.layout_data)
         self.query_one("#prop_font", Label).update(f"Font Preset: {font_preset} | Style: {style_preset}")
         self.query_one("#prop_scale", Label).update(f"Global Scale: {global_scale}")
         cols, rows = self._grid_size()
         self.query_one("#prop_grid", Label).update(f"{cols} cols x {rows} rows")
+        self.query_one("#prop_usage", Label).update(f"Occupied: {used}/{total} cells | Free: {free}")
 
     async def _refresh_component_list(self) -> None:
         list_view = self.query_one("#component_list", ListView)
@@ -427,6 +248,7 @@ class EditorScreen(Screen):
             self._set_input_value("#prop_row", "")
             self._set_input_value("#prop_col_span", "")
             self._set_input_value("#prop_row_span", "")
+            self._set_input_value("#prop_image_path", "")
             return
         component = self._get_component(self.selected_component_id)
         if not component:
@@ -436,6 +258,7 @@ class EditorScreen(Screen):
             self._set_input_value("#prop_row", "")
             self._set_input_value("#prop_col_span", "")
             self._set_input_value("#prop_row_span", "")
+            self._set_input_value("#prop_image_path", "")
             return
         self.query_one("#prop_selected", Static).update(
             f"Selected: {component.get('id')} ({component.get('type')})"
@@ -445,6 +268,10 @@ class EditorScreen(Screen):
         self._set_input_value("#prop_row", str(row))
         self._set_input_value("#prop_col_span", str(col_span))
         self._set_input_value("#prop_row_span", str(row_span))
+        if component.get("type") == "ImageWidget":
+            self._set_input_value("#prop_image_path", str(component.get("image_path") or ""))
+        else:
+            self._set_input_value("#prop_image_path", "")
 
     def _set_selected_tool(self, item: Optional[ListItem]) -> None:
         if not item or not item.id:
@@ -469,6 +296,7 @@ class EditorScreen(Screen):
             return
         self.layout_data.setdefault("components", []).append(new_component)
         self.selected_component_id = new_component["id"]
+        self._refresh_global_settings()
         await self._refresh_component_list()
         self._refresh_canvas()
         self._refresh_property_panel()
@@ -490,7 +318,14 @@ class EditorScreen(Screen):
         if not self._validate_position(self.selected_component_id, col, row, col_span, row_span):
             return
         component["pos"] = [col, row, col_span, row_span]
+        image_path = self._get_input_value("#prop_image_path")
+        if component.get("type") == "ImageWidget":
+            if image_path:
+                component["image_path"] = image_path
+            else:
+                component.pop("image_path", None)
         await self._refresh_component_list()
+        self._refresh_global_settings()
         self._refresh_canvas()
         self._refresh_property_panel()
 
@@ -499,11 +334,26 @@ class EditorScreen(Screen):
             self.notify("No component selected.")
             return
         components = self._components()
-        self.layout_data["components"] = [c for c in components if c.get("id") != self.selected_component_id]
-        self.selected_component_id = None
+        current_id = self.selected_component_id
+        current_index = 0
+        for index, component in enumerate(components):
+            if component.get("id") == current_id:
+                current_index = index
+                break
+
+        remaining = [c for c in components if c.get("id") != current_id]
+        self.layout_data["components"] = remaining
+        if remaining:
+            next_index = min(current_index, len(remaining) - 1)
+            self.selected_component_id = str(remaining[next_index].get("id") or "")
+        else:
+            self.selected_component_id = None
+        self._refresh_global_settings()
         await self._refresh_component_list()
         self._refresh_canvas()
         self._refresh_property_panel()
+        if current_id:
+            self.notify(f"Removed component: {current_id}")
 
     def _create_component_entry(self, tool: ComponentTool) -> Optional[Dict[str, object]]:
         base_id = tool.base_id
@@ -512,15 +362,21 @@ class EditorScreen(Screen):
         col_span, row_span = self._resolve_span(layout_class, tool)
         placement = self._find_slot(col_span, row_span)
         if placement is None:
-            self.notify("No space available for this component.")
+            used, total, free = layout_usage(self.layout_data)
+            self.notify(
+                f"No {col_span}x{row_span} slot available. Free cells: {free}/{total}. Move or shrink an existing widget first."
+            )
             return None
         col, row = placement
-        return {
+        component = {
             "id": component_id,
             "type": tool.type_name,
             "variant": tool.variant,
             "pos": [col, row, col_span, row_span],
         }
+        if tool.type_name == "ImageWidget":
+            component["image_path"] = ""
+        return component
 
     def _validate_position(self, component_id: str, col: int, row: int, col_span: int, row_span: int) -> bool:
         cols, rows = self._grid_size()
@@ -614,13 +470,10 @@ class EditorScreen(Screen):
         return self._default_span(layout_class, tool.base_id)
 
     def _default_span(self, layout_class: Optional[str], base_id: str) -> Tuple[int, int]:
-        spans = DEFAULT_SPANS.get(layout_class or "", {})
-        if base_id in spans:
-            return spans[base_id]
-        return (2, 1)
+        return default_span_for_component(layout_class, base_id)
 
     def _grid_size_for_class(self, layout_class: Optional[str]) -> Tuple[int, int]:
-        return LAYOUT_GRID_SIZES.get(layout_class or "", (6, 4))
+        return grid_size_for_layout_class(layout_class)
 
     def _grid_size(self) -> Tuple[int, int]:
         grid_size = self.layout_data.get("grid_size", {})
@@ -644,7 +497,7 @@ class EditorScreen(Screen):
         return None
 
     def _cells_for_pos(self, col: int, row: int, col_span: int, row_span: int) -> set:
-        return {(c, r) for c in range(col, col + col_span) for r in range(row, row + row_span)}
+        return cells_for_pos(col, row, col_span, row_span)
 
     def _set_input_value(self, selector: str, value: str) -> None:
         self.query_one(selector, Input).value = value
