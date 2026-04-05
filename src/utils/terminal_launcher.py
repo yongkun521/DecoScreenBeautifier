@@ -394,6 +394,10 @@ def _resolve_virtual_key(key_token: str) -> Optional[int]:
         "pageup": 0x21,
         "pgdn": 0x22,
         "pagedown": 0x22,
+        "numpad_plus": 0x6B,
+        "add": 0x6B,
+        "numpad_minus": 0x6D,
+        "subtract": 0x6D,
         "minus": 0xBD,
         "-": 0xBD,
         "equal": 0xBB,
@@ -414,6 +418,54 @@ def _resolve_virtual_key(key_token: str) -> Optional[int]:
         return ord(key)
 
     return None
+
+
+def _resolve_virtual_key_from_layout_character(
+    key_token: str,
+) -> Optional[tuple[int, list[int]]]:
+    token = str(key_token or "").strip().lower()
+    if not token or not _is_windows():
+        return None
+
+    character_aliases = {
+        "plus": "+",
+        "minus": "-",
+        "equal": "=",
+        "equals": "=",
+        "underscore": "_",
+        "_": "_",
+        "-": "-",
+        "=": "=",
+    }
+    character = character_aliases.get(token)
+    if character is None and len(token) == 1 and not token.isalnum():
+        character = token
+    if not character or len(character) != 1:
+        return None
+
+    try:
+        import ctypes
+    except Exception:
+        return None
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    vk_state = int(user32.VkKeyScanW(ord(character)))
+    if vk_state in {-1, 0xFFFF}:
+        return None
+
+    virtual_key = vk_state & 0xFF
+    shift_state = (vk_state >> 8) & 0xFF
+    modifier_bits = (
+        (0x01, 0x10),  # shift
+        (0x02, 0x11),  # ctrl
+        (0x04, 0x12),  # alt
+    )
+    modifiers = [
+        virtual_modifier
+        for bitmask, virtual_modifier in modifier_bits
+        if shift_state & bitmask
+    ]
+    return virtual_key, modifiers
 
 
 def _send_hotkey(binding: str) -> tuple[bool, str]:
@@ -442,19 +494,27 @@ def _send_hotkey(binding: str) -> tuple[bool, str]:
     if main_key_token is None:
         return False, "No main key in hotkey binding"
 
-    shifted_key_aliases = {
-        "plus": "equal",
-        "_": "minus",
-    }
-    shifted_token = shifted_key_aliases.get(main_key_token)
-    if shifted_token:
-        main_key_token = shifted_token
-        if modifier_map["shift"] not in modifiers:
-            modifiers.append(modifier_map["shift"])
+    layout_resolved = _resolve_virtual_key_from_layout_character(main_key_token)
+    extra_modifiers: list[int] = []
+    if layout_resolved is not None:
+        main_key, extra_modifiers = layout_resolved
+    else:
+        shifted_key_aliases = {
+            "plus": "equal",
+            "_": "minus",
+        }
+        shifted_token = shifted_key_aliases.get(main_key_token)
+        if shifted_token:
+            main_key_token = shifted_token
+            if modifier_map["shift"] not in modifiers:
+                modifiers.append(modifier_map["shift"])
 
-    main_key = _resolve_virtual_key(main_key_token)
+        main_key = _resolve_virtual_key(main_key_token)
     if main_key is None:
         return False, f"Unsupported key token: {main_key_token}"
+    for modifier in extra_modifiers:
+        if modifier not in modifiers:
+            modifiers.append(modifier)
 
     try:
         import ctypes

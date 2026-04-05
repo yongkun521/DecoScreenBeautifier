@@ -10,11 +10,13 @@ from textual.widgets import Button, Footer, Header, Input, Label, ListItem, List
 from config.manager import ConfigManager
 from core.layout_config import (
     BASE_COMPONENTS,
+    add_manual_empty_row,
     build_default_layout,
     cells_for_pos,
     default_span_for_component,
     grid_size_for_layout_class,
     layout_usage,
+    remove_manual_empty_row,
     sanitize_layout_data,
 )
 from core.presets import DEFAULT_TEMPLATE_ID
@@ -93,6 +95,9 @@ class EditorScreen(Screen):
                 yield Label("Grid", classes="prop_section")
                 yield Label("", id="prop_grid")
                 yield Label("", id="prop_usage")
+                with Horizontal(id="grid_row_actions"):
+                    yield Button("Add Row", variant="primary", id="btn_add_row")
+                    yield Button("Remove Row", variant="warning", id="btn_remove_row")
                 yield Label("Position (0-based)", classes="prop_section")
                 yield Label("Column", classes="prop_label")
                 yield Input(placeholder="Column", id="prop_col")
@@ -133,6 +138,10 @@ class EditorScreen(Screen):
         button_id = event.button.id
         if button_id == "btn_add":
             await self._handle_add_component()
+        elif button_id == "btn_add_row":
+            await self._handle_add_row()
+        elif button_id == "btn_remove_row":
+            await self._handle_remove_row()
         elif button_id == "btn_apply":
             await self._handle_apply_changes()
         elif button_id in {"btn_remove", "btn_remove_selected"}:
@@ -147,6 +156,7 @@ class EditorScreen(Screen):
         if not self.config_manager or not self.layout_name:
             self.notify("No layout to save.")
             return
+        self.layout_data = self._sanitize_layout(self.layout_data)
         self.layout_data["template_id"] = self.template.get("id", DEFAULT_TEMPLATE_ID)
         self.layout_data.setdefault("layout_class", self.template.get("layout_class"))
         self.layout_data.setdefault("name", f"Layout {self.layout_name}")
@@ -198,11 +208,14 @@ class EditorScreen(Screen):
         style_preset = settings.get("style_preset", "default")
         global_scale = settings.get("global_scale", 1.0)
         used, total, free = layout_usage(self.layout_data)
+        manual_rows = max(0, self._safe_int(self.layout_data.get("manual_rows"), 0) or 0)
         self.query_one("#prop_font", Label).update(f"Font Preset: {font_preset} | Style: {style_preset}")
         self.query_one("#prop_scale", Label).update(f"Global Scale: {global_scale}")
         cols, rows = self._grid_size()
         self.query_one("#prop_grid", Label).update(f"{cols} cols x {rows} rows")
-        self.query_one("#prop_usage", Label).update(f"Occupied: {used}/{total} cells | Free: {free}")
+        self.query_one("#prop_usage", Label).update(
+            f"Occupied: {used}/{total} cells | Free: {free} | Manual blank rows: {manual_rows}"
+        )
 
     async def _refresh_component_list(self) -> None:
         list_view = self.query_one("#component_list", ListView)
@@ -295,11 +308,33 @@ class EditorScreen(Screen):
         if not new_component:
             return
         self.layout_data.setdefault("components", []).append(new_component)
+        self.layout_data = self._sanitize_layout(self.layout_data)
         self.selected_component_id = new_component["id"]
         self._refresh_global_settings()
         await self._refresh_component_list()
         self._refresh_canvas()
         self._refresh_property_panel()
+
+    async def _handle_add_row(self) -> None:
+        self.layout_data = add_manual_empty_row(self.layout_data)
+        self._refresh_global_settings()
+        await self._refresh_component_list()
+        self._refresh_canvas()
+        self._refresh_property_panel()
+        self.notify("Added one blank row.")
+
+    async def _handle_remove_row(self) -> None:
+        before = max(0, self._safe_int(self.layout_data.get("manual_rows"), 0) or 0)
+        self.layout_data = remove_manual_empty_row(self.layout_data)
+        after = max(0, self._safe_int(self.layout_data.get("manual_rows"), 0) or 0)
+        self._refresh_global_settings()
+        await self._refresh_component_list()
+        self._refresh_canvas()
+        self._refresh_property_panel()
+        if after < before:
+            self.notify("Removed one trailing blank row.")
+        else:
+            self.notify("No manual blank row to remove.")
 
     async def _handle_apply_changes(self) -> None:
         if not self.selected_component_id:
@@ -324,6 +359,7 @@ class EditorScreen(Screen):
                 component["image_path"] = image_path
             else:
                 component.pop("image_path", None)
+        self.layout_data = self._sanitize_layout(self.layout_data)
         await self._refresh_component_list()
         self._refresh_global_settings()
         self._refresh_canvas()
@@ -343,6 +379,8 @@ class EditorScreen(Screen):
 
         remaining = [c for c in components if c.get("id") != current_id]
         self.layout_data["components"] = remaining
+        self.layout_data = self._sanitize_layout(self.layout_data)
+        remaining = self._components()
         if remaining:
             next_index = min(current_index, len(remaining) - 1)
             self.selected_component_id = str(remaining[next_index].get("id") or "")

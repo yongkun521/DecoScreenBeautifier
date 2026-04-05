@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple
 from core.presets import DEFAULT_TEMPLATE_ID
 
 DEFAULT_IMAGE_PATH = "assets/logo.png"
+DEFAULT_MANUAL_ROWS = 0
 
 DEFAULT_ACTIVE_COMPONENTS = ["p_hardware", "p_network", "p_clock", "p_audio", "p_image"]
 
@@ -192,6 +193,7 @@ def build_default_layout(template: Optional[dict]) -> Dict[str, object]:
         "template_id": template_id,
         "layout_class": layout_class,
         "grid_size": {"cols": cols, "rows": rows},
+        "manual_rows": DEFAULT_MANUAL_ROWS,
         "components": components,
     }
 
@@ -214,6 +216,7 @@ def sanitize_layout_data(layout_data: object, template: Optional[dict]) -> Dict[
 
     layout["grid_size"] = {"cols": cols, "rows": rows}
     layout["layout_class"] = layout_class
+    layout["manual_rows"] = max(0, _safe_int(layout.get("manual_rows"), DEFAULT_MANUAL_ROWS))
     layout.setdefault("template_id", template.get("id", DEFAULT_TEMPLATE_ID))
     layout.setdefault("name", f"Layout {layout.get('template_id', DEFAULT_TEMPLATE_ID)}")
 
@@ -265,7 +268,7 @@ def sanitize_layout_data(layout_data: object, template: Optional[dict]) -> Dict[
         clean_components.append(component)
 
     layout["components"] = clean_components
-    return layout
+    return compact_layout_data(layout)
 
 
 def layout_usage(layout_data: object) -> Tuple[int, int, int]:
@@ -307,6 +310,106 @@ def cells_for_pos(col: int, row: int, col_span: int, row_span: int) -> set[tuple
         for c in range(col, col + col_span)
         for r in range(row, row + row_span)
     }
+
+
+def compact_layout_data(layout_data: object) -> Dict[str, object]:
+    if not isinstance(layout_data, dict):
+        return {
+            "grid_size": {"cols": 1, "rows": 1},
+            "components": [],
+            "manual_rows": DEFAULT_MANUAL_ROWS,
+        }
+
+    layout = deepcopy(layout_data)
+    components = layout.get("components")
+    if not isinstance(components, list):
+        components = []
+    manual_rows = max(0, _safe_int(layout.get("manual_rows"), DEFAULT_MANUAL_ROWS))
+
+    row_indices: set[int] = set()
+    col_indices: set[int] = set()
+    for component in components:
+        if not isinstance(component, dict):
+            continue
+        pos = component.get("pos", [0, 0, 1, 1])
+        if not isinstance(pos, list):
+            continue
+        while len(pos) < 4:
+            pos.append(1)
+        col = max(0, _safe_int(pos[0], 0))
+        row = max(0, _safe_int(pos[1], 0))
+        col_span = max(1, _safe_int(pos[2], 1))
+        row_span = max(1, _safe_int(pos[3], 1))
+        row_indices.update(range(row, row + row_span))
+        col_indices.update(range(col, col + col_span))
+
+    sorted_rows = sorted(row_indices)
+    sorted_cols = sorted(col_indices)
+
+    if not sorted_rows:
+        sorted_rows = [0]
+    if not sorted_cols:
+        sorted_cols = [0]
+
+    row_map = {old: new for new, old in enumerate(sorted_rows)}
+    col_map = {old: new for new, old in enumerate(sorted_cols)}
+
+    clean_components: List[Dict[str, object]] = []
+    for component in components:
+        if not isinstance(component, dict):
+            continue
+        pos = component.get("pos", [0, 0, 1, 1])
+        if not isinstance(pos, list):
+            continue
+        while len(pos) < 4:
+            pos.append(1)
+
+        old_col = max(0, _safe_int(pos[0], 0))
+        old_row = max(0, _safe_int(pos[1], 0))
+        old_col_span = max(1, _safe_int(pos[2], 1))
+        old_row_span = max(1, _safe_int(pos[3], 1))
+
+        covered_cols = [col for col in range(old_col, old_col + old_col_span) if col in col_map]
+        covered_rows = [row for row in range(old_row, old_row + old_row_span) if row in row_map]
+        if not covered_cols or not covered_rows:
+            continue
+
+        component["pos"] = [
+            col_map[covered_cols[0]],
+            row_map[covered_rows[0]],
+            len(covered_cols),
+            len(covered_rows),
+        ]
+        clean_components.append(component)
+
+    layout["components"] = clean_components
+    layout["manual_rows"] = manual_rows
+    layout["grid_size"] = {
+        "cols": max(1, len(sorted_cols)),
+        "rows": max(1, len(sorted_rows) + manual_rows),
+    }
+    return layout
+
+
+def add_manual_empty_row(layout_data: object) -> Dict[str, object]:
+    layout = compact_layout_data(layout_data)
+    layout["manual_rows"] = max(0, _safe_int(layout.get("manual_rows"), DEFAULT_MANUAL_ROWS)) + 1
+    grid_size = layout.get("grid_size", {})
+    if not isinstance(grid_size, dict):
+        grid_size = {}
+        layout["grid_size"] = grid_size
+    grid_size["cols"] = max(1, _safe_int(grid_size.get("cols"), 1))
+    grid_size["rows"] = max(1, _safe_int(grid_size.get("rows"), 1)) + 1
+    return layout
+
+
+def remove_manual_empty_row(layout_data: object) -> Dict[str, object]:
+    layout = compact_layout_data(layout_data)
+    manual_rows = max(0, _safe_int(layout.get("manual_rows"), DEFAULT_MANUAL_ROWS))
+    if manual_rows <= 0:
+        return layout
+    layout["manual_rows"] = manual_rows - 1
+    return compact_layout_data(layout)
 
 
 def _auto_place_components(components: List[Dict[str, object]], cols: int, rows: int) -> None:

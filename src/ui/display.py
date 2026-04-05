@@ -4,9 +4,10 @@ from typing import Optional
 
 from textual import events
 from textual.app import ComposeResult
-from textual.containers import Grid, Horizontal
+from textual.binding import Binding
+from textual.containers import Grid
 from textual.screen import Screen
-from textual.widgets import Button, Footer, Header, Static
+from textual.widgets import Footer, Header, Static
 
 from components import create_component_widget
 from components.base import BaseWidget
@@ -45,9 +46,11 @@ class DisplayScreen(Screen):
     """主显示界面，用于展示各类 CLI 组件。"""
 
     BINDINGS = [
-        ("b", "toggle_wt_border", "Toggle Border"),
-        ("h", "toggle_header", "Toggle Header"),
-        ("m", "toggle_toolbar", "Toggle Toolbar"),
+        Binding("f7", "zoom_out", " ", key_display="Zoom -", tooltip="Scale Down"),
+        Binding("f8", "zoom_in", " ", key_display="Zoom +", tooltip="Scale Up"),
+        Binding("b", "toggle_wt_border", "Toggle Border"),
+        Binding("h", "toggle_header", "Toggle Header"),
+        Binding("m", "toggle_toolbar", "Toggle Toolbar"),
     ]
 
     def __init__(self, **kwargs):
@@ -61,14 +64,6 @@ class DisplayScreen(Screen):
         _trace_startup("display.compose: enter")
         yield Header(show_clock=True, id="app_header")
         yield Grid(id="main_grid")
-
-        with Horizontal(id="bottom_toolbar"):
-            yield Button("Zoom -", id="btn_zoom_out", classes="toolbar-btn toolbar-btn-compact")
-            yield Button("Zoom +", id="btn_zoom_in", classes="toolbar-btn toolbar-btn-compact")
-            yield Button("Border", id="btn_toggle_border", classes="toolbar-btn")
-            yield Button("Header", id="btn_toggle_header", classes="toolbar-btn")
-            yield Button("Toolbar", id="btn_toggle_toolbar", classes="toolbar-btn")
-
         yield Footer(id="app_footer")
 
     async def on_mount(self) -> None:
@@ -81,41 +76,11 @@ class DisplayScreen(Screen):
     async def on_screen_resume(self, _event: events.ScreenResume) -> None:
         await self._reload_from_config()
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        button_id = event.button.id
-        if button_id == "btn_zoom_in":
-            self.action_zoom_in()
-            return
-        if button_id == "btn_zoom_out":
-            self.action_zoom_out()
-            return
-        if button_id == "btn_toggle_border":
-            self.action_toggle_wt_border()
-            return
-        if button_id == "btn_toggle_header":
-            self.action_toggle_header()
-            return
-        if button_id == "btn_toggle_toolbar":
-            self.action_toggle_toolbar()
-            return
-
     def on_mouse_down(self, event: events.MouseDown) -> None:
         if self._toolbar_visible:
             return
-        try:
-            target_id = event.widget.id if event.widget is not None else None
-        except Exception:
-            target_id = None
-        if target_id in {
-            "btn_zoom_in",
-            "btn_zoom_out",
-            "btn_toggle_toolbar",
-            "btn_toggle_header",
-            "btn_toggle_border",
-        }:
-            return
         self._set_toolbar_visible(True)
-        self.notify("Toolbar restored.")
+        self.notify("Footer toolbar restored.")
 
     def action_zoom_in(self) -> None:
         action = getattr(self.app, "action_zoom_in", None)
@@ -148,9 +113,9 @@ class DisplayScreen(Screen):
     def action_toggle_toolbar(self) -> None:
         self._set_toolbar_visible(not self._toolbar_visible)
         if self._toolbar_visible:
-            self.notify("Toolbar shown.")
+            self.notify("Footer toolbar shown.")
             return
-        self.notify("Toolbar hidden. Click anywhere to restore.")
+        self.notify("Footer toolbar hidden. Press M or click anywhere to restore.")
 
     async def _reload_from_config(self) -> None:
         config_manager = getattr(self.app, "config_manager", None)
@@ -169,6 +134,7 @@ class DisplayScreen(Screen):
         layout_data = sanitize_layout_data(raw_layout, template)
 
         self._apply_template_classes(template, layout_data)
+        self._apply_grid_styles(layout_data)
         await self._mount_layout_widgets(layout_data)
         self._apply_visual_preset()
 
@@ -192,6 +158,23 @@ class DisplayScreen(Screen):
                 await grid.mount_all(widgets)
 
         _trace_startup("display.layout_widgets: " + ",".join(self._built_widget_ids))
+
+    def _apply_grid_styles(self, layout_data: dict) -> None:
+        try:
+            grid = self.query_one("#main_grid", Grid)
+        except Exception:
+            return
+
+        grid_size = layout_data.get("grid_size", {})
+        if not isinstance(grid_size, dict):
+            grid_size = {}
+        cols = max(1, int(grid_size.get("cols", 1)))
+        rows = max(1, int(grid_size.get("rows", 1)))
+
+        grid.styles.grid_size_columns = cols
+        grid.styles.grid_size_rows = rows
+        grid.styles.grid_columns = " ".join(["1fr"] * cols)
+        grid.styles.grid_rows = " ".join(["1fr"] * rows)
 
     def _build_layout_widgets(self, layout_data: dict) -> list[Static]:
         self._built_widget_ids = []
@@ -294,12 +277,6 @@ class DisplayScreen(Screen):
 
     def _set_toolbar_visible(self, visible: bool) -> None:
         self._toolbar_visible = bool(visible)
-        try:
-            toolbar = self.query_one("#bottom_toolbar", Horizontal)
-        except Exception:
-            toolbar = None
-        if toolbar is not None:
-            toolbar.display = self._toolbar_visible
         try:
             footer = self.query_one("#app_footer", Footer)
         except Exception:

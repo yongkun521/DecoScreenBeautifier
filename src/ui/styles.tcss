@@ -71,35 +71,6 @@ Footer {
     color: #00FFFF;       /* 霓虹蓝 */
 }
 
-#btn_toggle_border {
-    height: 3;
-    background: #101820;
-    color: #7DF9FF;
-}
-
-#bottom_toolbar {
-    dock: bottom;
-    height: 3;
-    layout: horizontal;
-    width: 100%;
-    padding: 0 1;
-    background: #101820;
-    border-top: solid #00FFFF;
-}
-
-.toolbar-btn {
-    width: 1fr;
-    height: 3;
-    background: #101820;
-    color: #7DF9FF;
-    border: none;
-    content-align: center middle;
-}
-
-.toolbar-btn-compact {
-    width: 10;
-}
-
 #app_footer {
     dock: bottom;
     height: 1;
@@ -202,16 +173,6 @@ Screen.theme-night Footer {
 Screen.theme-redline-2077 Footer {
     background: #23070C;
     color: #FF9C54;
-}
-
-Screen.theme-redline-2077 #bottom_toolbar {
-    background: #23070C;
-    border-top: solid #FF9C54;
-}
-
-Screen.theme-redline-2077 .toolbar-btn {
-    background: #23070C;
-    color: #FFB46B;
 }
 
 Screen.theme-redline-2077 #p_hardware,
@@ -644,6 +605,17 @@ Screen.layout-strip-plus #p_stream { column-span: 12; row-span: 1; }
 
 #btn_remove_selected {
     margin-top: 1;
+}
+
+#grid_row_actions {
+    height: auto;
+    layout: horizontal;
+    width: 100%;
+    margin: 0 0 1 0;
+}
+
+#grid_row_actions Button {
+    width: 1fr;
 }
 
 /* 模板选择界面 */
