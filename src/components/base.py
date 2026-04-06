@@ -5,6 +5,8 @@ from rich.align import Align
 from rich.text import Text
 import random
 
+from .chrome import LIGHT_VARIANTS, build_light_chrome
+
 try:
     from utils.startup_trace import trace_startup as _trace_startup
 except Exception:
@@ -141,6 +143,8 @@ class BaseWidget(Static):
 
         horizontal_chrome = 0 if self.has_any_class(
             "variant-minimal",
+            "variant-rail",
+            "variant-corner",
             "variant-ribbon",
             "variant-hero",
         ) else 2
@@ -149,6 +153,33 @@ class BaseWidget(Static):
             max(1, width - horizontal_chrome),
             max(1, height - vertical_chrome),
         )
+
+    def get_variant_name(self) -> str:
+        for class_name in self.classes:
+            if str(class_name).startswith("variant-"):
+                return str(class_name)
+        return ""
+
+    def uses_light_chrome(self) -> bool:
+        return self.has_any_class(*LIGHT_VARIANTS)
+
+    def compose_widget_content(self, body, *, footer: str | Text | None = None):
+        if not self.uses_light_chrome():
+            return Align.center(body, vertical="middle")
+
+        chrome = build_light_chrome(
+            body,
+            title=self._title or (self.id or "WIDGET"),
+            width=self.get_content_size()[0],
+            variant=self.get_variant_name(),
+            line_color=self.get_style_color("line", self.get_style_color("secondary", "#00FFFF")),
+            line_dim_color=self.get_style_color("line_dim", self.get_style_color("muted", "#66FF99")),
+            accent_color=self.get_style_color("accent", self.get_style_color("primary", "#00FF41")),
+            muted_color=self.get_style_color("muted", "#66FF99"),
+            label_bg=self.get_style_color("label_bg", self.get_style_color("surface_alt", "#111111")),
+            footer=footer,
+        )
+        return Align.center(chrome, vertical="middle")
 
     def _apply_style_preset(self) -> None:
         preset = self.get_style_preset()

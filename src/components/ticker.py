@@ -36,7 +36,11 @@ class InfoTicker(BaseWidget):
         width = max(10, self.size.width - 2)
         line = self._scroll_text(self._cached_message, width)
         color = self.get_style_color("ticker", "bright_cyan")
-        self.update(Align.center(Text(line, style=color), vertical="middle"))
+        ticker_text = Text(line, style=color)
+        if self.uses_light_chrome():
+            self.update(self.compose_widget_content(ticker_text, footer="sys feed"))
+        else:
+            self.update(Align.center(ticker_text, vertical="middle"))
         self._offset += 1
 
     def _scroll_text(self, message: str, width: int) -> str:

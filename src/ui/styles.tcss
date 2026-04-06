@@ -53,6 +53,16 @@ Screen.theme-redline-2077 {
     color: #FF6678;
 }
 
+Screen.theme-signal-lattice {
+    background: #071219;
+    color: #89F5FF;
+}
+
+Screen.theme-deck-strip {
+    background: #140A08;
+    color: #FFC27A;
+}
+
 /* 头部样式 */
 Header {
     dock: top;
@@ -130,6 +140,18 @@ Screen.theme-redline-2077 Header {
     border-bottom: double #FF9C54;
 }
 
+Screen.theme-signal-lattice Header {
+    background: #0C1B24;
+    color: #89F5FF;
+    border-bottom: solid #5DE4C7;
+}
+
+Screen.theme-deck-strip Header {
+    background: #21110E;
+    color: #FFC27A;
+    border-bottom: solid #FF8C42;
+}
+
 Screen.theme-neon Footer {
     background: #1a1a1a;
     color: #00FFFF;
@@ -173,6 +195,16 @@ Screen.theme-night Footer {
 Screen.theme-redline-2077 Footer {
     background: #23070C;
     color: #FF9C54;
+}
+
+Screen.theme-signal-lattice Footer {
+    background: #0C1B24;
+    color: #5DE4C7;
+}
+
+Screen.theme-deck-strip Footer {
+    background: #21110E;
+    color: #FFB36B;
 }
 
 Screen.theme-redline-2077 #p_hardware,
@@ -223,6 +255,12 @@ Screen.theme-redline-2077 .component-stream {
     grid-rows: 1fr 1fr 1fr 1fr;
     grid-gutter: 1;       /* 间距 */
     padding: 1;
+}
+
+Screen.theme-signal-lattice #main_grid,
+Screen.theme-deck-strip #main_grid {
+    grid-gutter: 0;
+    padding: 0 1;
 }
 
 /* 组件样式覆盖 */
@@ -507,6 +545,34 @@ Screen.layout-strip-plus #p_stream { column-span: 12; row-span: 1; }
     padding: 0 1;
     margin: 0 1;
     border: double #B967FF;
+}
+
+.variant-rail {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+}
+
+.variant-corner {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+}
+
+.variant-ribbon {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+}
+
+.variant-hero {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
 }
 
 .grid-spacer {

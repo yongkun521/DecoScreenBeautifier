@@ -1,6 +1,7 @@
 from datetime import datetime
 from rich.text import Text
 from rich.align import Align
+from rich.console import Group
 from .base import BaseWidget
 
 class ClockWidget(BaseWidget):
@@ -36,6 +37,22 @@ class ClockWidget(BaseWidget):
         time_color = self.get_style_color("time", "magenta")
         date_color = self.get_style_color("date", "cyan")
         accent_color = self.get_style_color("accent", "yellow")
+
+        if self.uses_light_chrome():
+            time_main, _, time_seconds = time_str.partition(":")
+            time_body = Group(
+                Text.assemble(
+                    (time_main, f"bold {time_color}"),
+                    (":" + time_seconds[:2], f"bold {accent_color}"),
+                ),
+                Text(time_seconds[3:] if len(time_seconds) > 3 else "", style=f"bold {date_color}"),
+                Text.assemble(
+                    (date_str, date_color),
+                    ("  ", date_color),
+                    (weekday_str, f"bold {accent_color}"),
+                ),
+            )
+            return self.compose_widget_content(time_body, footer="time sync stable")
 
         # 时间主体
         time_text = Text(time_str, style=f"bold {time_color}")

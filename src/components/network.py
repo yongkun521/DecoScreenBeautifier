@@ -43,6 +43,9 @@ class NetworkMonitor(BaseWidget):
 
     def _build_content(self):
         """渲染网络监控内容"""
+        if self.uses_light_chrome():
+            return self._build_light_content()
+
         # 转换单位
         def format_speed(speed):
             if speed > 1024 * 1024:
@@ -80,4 +83,30 @@ class NetworkMonitor(BaseWidget):
         return Align.center(
             Group(table, Text(""), arrows_line),
             vertical="middle"
+        )
+
+    def _build_light_content(self):
+        def format_speed(speed):
+            if speed > 1024 * 1024:
+                return f"{speed / (1024 * 1024):.2f} MB/s"
+            return f"{speed / 1024:.2f} KB/s"
+
+        down_color = self.get_style_color("net_down", "cyan")
+        up_color = self.get_style_color("net_up", "magenta")
+        label_color = self.get_style_color("muted", "grey70")
+        line_color = self.get_style_color("line", self.get_style_color("secondary", "cyan"))
+
+        rx_fill = max(1, min(16, int(self.down_speed / 102400) + 1)) if self.down_speed > 0 else 1
+        tx_fill = max(1, min(16, int(self.up_speed / 102400) + 1)) if self.up_speed > 0 else 1
+        rx_bar = Text("━" * rx_fill + "╾", style=down_color)
+        tx_bar = Text("╼" + "━" * tx_fill, style=up_color)
+
+        flow = Group(
+            Text.assemble(("RX ", f"bold {label_color}"), rx_bar, ("  " + format_speed(self.down_speed), f"bold {down_color}")),
+            Text.assemble(("TX ", f"bold {label_color}"), tx_bar, ("  " + format_speed(self.up_speed), f"bold {up_color}")),
+            Text.assemble(("LINK ", f"bold {label_color}"), ("SYNC", f"bold {line_color}"), ("  downlink/uplink active", label_color)),
+        )
+        return self.compose_widget_content(
+            flow,
+            footer=f"rx {self.down_speed / 1024:.0f} KB/s | tx {self.up_speed / 1024:.0f} KB/s",
         )

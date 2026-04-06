@@ -42,17 +42,24 @@ class ComponentTool:
 COMPONENT_TOOLS: List[ComponentTool] = [
     ComponentTool("hardware_dense", "Hardware Monitor - Dense", "HardwareMonitor", "p_hardware", "variant-dense"),
     ComponentTool("hardware_slim", "Hardware Monitor - Slim", "HardwareMonitor", "p_hardware", "variant-slim"),
+    ComponentTool("hardware_rail", "Hardware Monitor - Rail", "HardwareMonitor", "p_hardware", "variant-rail"),
     ComponentTool("network_ribbon", "Network Monitor - Ribbon", "NetworkMonitor", "p_network", "variant-banner"),
     ComponentTool("network_min", "Network Monitor - Minimal", "NetworkMonitor", "p_network", "variant-minimal"),
+    ComponentTool("network_signal_ribbon", "Network Monitor - Signal Ribbon", "NetworkMonitor", "p_network", "variant-ribbon"),
     ComponentTool("clock_min", "Clock - Minimal", "ClockWidget", "p_clock", "variant-minimal"),
     ComponentTool("clock_glitch", "Clock - Glitch", "ClockWidget", "p_clock", "variant-dense"),
+    ComponentTool("clock_hero", "Clock - Hero", "ClockWidget", "p_clock", "variant-hero"),
     ComponentTool("audio_spectrum", "Audio Visualizer - Spectrum", "AudioVisualizer", "p_audio", "variant-banner"),
     ComponentTool("audio_bars", "Audio Visualizer - Bars", "AudioVisualizer", "p_audio", "variant-compact"),
     ComponentTool("image_poster", "Image - Poster", "ImageWidget", "p_image", "variant-compact"),
     ComponentTool("image_matrix", "Image - Matrix", "ImageWidget", "p_image", "variant-slim"),
+    ComponentTool("image_hero", "Image - Hero", "ImageWidget", "p_image", "variant-hero"),
     ComponentTool("ticker", "Info Ticker", "InfoTicker", "p_ticker", "variant-banner", default_span=(4, 1)),
+    ComponentTool("ticker_ribbon", "Info Ticker - Ribbon", "InfoTicker", "p_ticker", "variant-ribbon", default_span=(4, 1)),
     ComponentTool("badge", "Status Badge", "StatusBadge", "p_badge", "variant-compact", default_span=(2, 1)),
+    ComponentTool("badge_corner", "Status Badge - Corner", "StatusBadge", "p_badge", "variant-corner", default_span=(2, 1)),
     ComponentTool("stream", "Signal Stream", "DataStreamWidget", "p_stream", "variant-glow", default_span=(4, 2)),
+    ComponentTool("stream_rail", "Signal Stream - Rail", "DataStreamWidget", "p_stream", "variant-rail", default_span=(4, 2)),
 ]
 
 TOKEN_SET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"

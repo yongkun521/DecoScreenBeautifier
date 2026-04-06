@@ -184,6 +184,12 @@ def build_default_layout(template: Optional[dict]) -> Dict[str, object]:
     variant_map = template.get("component_variants", {})
     if not isinstance(variant_map, dict):
         variant_map = {}
+    template_image_display_mode = normalize_image_display_mode(
+        template.get("image_display_mode")
+    )
+    template_image_render_mode = normalize_image_render_mode(
+        template.get("image_render_mode")
+    )
 
     active_components = template.get("active_components")
     if not isinstance(active_components, list):
@@ -203,8 +209,8 @@ def build_default_layout(template: Optional[dict]) -> Dict[str, object]:
         }
         if type_name == "ImageWidget":
             component["image_path"] = DEFAULT_IMAGE_PATH
-            component["image_display_mode"] = DEFAULT_IMAGE_DISPLAY_MODE
-            component["image_render_mode"] = DEFAULT_IMAGE_RENDER_MODE
+            component["image_display_mode"] = template_image_display_mode
+            component["image_render_mode"] = template_image_render_mode
         components.append(component)
 
     _auto_place_components(components, cols, rows)

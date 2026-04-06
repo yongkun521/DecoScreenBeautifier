@@ -43,6 +43,9 @@ class HardwareMonitor(BaseWidget):
 
     def _build_content(self, cpu_percents, mem, swap):
         """渲染组件内容"""
+        if self.uses_light_chrome():
+            return self._build_light_content(cpu_percents, mem, swap)
+
         table = Table.grid(expand=True)
         table.add_column(justify="left")
 
@@ -102,6 +105,49 @@ class HardwareMonitor(BaseWidget):
                 )
             ),
             vertical="middle"
+        )
+
+    def _build_light_content(self, cpu_percents, mem, swap):
+        cpu_ok = self.get_style_color("cpu_ok", "green")
+        cpu_warn = self.get_style_color("cpu_warn", "yellow")
+        cpu_crit = self.get_style_color("cpu_crit", "red")
+        mem_color = self.get_style_color("mem", "cyan")
+        swap_color = self.get_style_color("swap", "magenta")
+        accent_color = self.get_style_color("accent", "white")
+        label_color = self.get_style_color("muted", "grey70")
+        avg_cpu = sum(cpu_percents) / max(1, len(cpu_percents))
+
+        cpu_grid = Table.grid(expand=True, padding=(0, 1))
+        cpu_grid.add_column(justify="left", ratio=1)
+        cpu_grid.add_column(justify="left", ratio=3)
+        for i, percent in enumerate(cpu_percents[:6]):
+            bar_color = cpu_ok if percent < 70 else cpu_warn if percent < 90 else cpu_crit
+            cpu_grid.add_row(
+                Text(f"C{i:02d}", style=label_color),
+                Text.assemble(
+                    self._make_cyber_bar(percent, width=10, color=bar_color),
+                    (f" {percent:>5.1f}%", bar_color),
+                ),
+            )
+
+        metric_lines = Group(
+            Text.assemble(("AVG CPU ", f"bold {label_color}"), (f"{avg_cpu:>5.1f}%", f"bold {accent_color}")),
+            Text.assemble(("MEM ", f"bold {label_color}"), self._make_cyber_bar(mem.percent, width=12, color=mem_color), (f" {mem.percent:>5.1f}%", mem_color)),
+            Text.assemble(("SWP ", f"bold {label_color}"), self._make_cyber_bar(swap.percent, width=12, color=swap_color), (f" {swap.percent:>5.1f}%", swap_color)),
+        )
+
+        body_table = Table.grid(expand=True)
+        body_table.add_column(ratio=5)
+        body_table.add_column(ratio=4)
+        body_table.add_row(cpu_grid, metric_lines)
+        trend = self._make_trend_line(self.cpu_history)
+        content = Group(
+            body_table,
+            Text.assemble(("TREND ", f"bold {label_color}"), trend),
+        )
+        return self.compose_widget_content(
+            content,
+            footer=f"{len(cpu_percents)} cores | mem {mem.used / (1024**3):.1f}G",
         )
 
     def _make_cyber_bar(self, percentage, width=20, color="green"):

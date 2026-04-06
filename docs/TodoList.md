@@ -358,3 +358,29 @@
   - [x] 新增 `tests/test_image_processor.py`
   - [x] 新增 `tests/test_layout_config.py`
   - [x] 执行 `venv\Scripts\python.exe -m unittest tests.test_image_processor tests.test_layout_config`
+
+## 2026-04-06 Textual UI V2 阶段 2（轻框图形视觉层）
+- [x] 新增共享轻框 chrome 组装层：
+  - [x] 新增 `src/components/chrome.py`
+  - [x] `BaseWidget` 新增轻框 variant 判定与统一 chrome 包装逻辑
+- [x] 新增 4 个轻框图形变体：
+  - [x] `variant-rail`
+  - [x] `variant-corner`
+  - [x] `variant-ribbon`
+  - [x] `variant-hero`
+- [x] 核心组件新增轻框渲染路径：
+  - [x] `HardwareMonitor`
+  - [x] `NetworkMonitor`
+  - [x] `ClockWidget`
+  - [x] `ImageWidget`
+  - [x] `InfoTicker`
+  - [x] `StatusBadge`
+  - [x] `DataStreamWidget`
+- [x] 新增 2 套 UI V2 内置模板：
+  - [x] `Signal Lattice Max`
+  - [x] `Deck Strip V2`
+- [x] 编辑器组件库补齐新视觉变体快捷入口
+- [x] smoke 校验：
+  - [x] `venv\Scripts\python.exe -m py_compile src\components\chrome.py src\components\base.py src\components\hardware.py src\components\network.py src\components\clock.py src\components\status.py src\components\stream.py src\components\ticker.py src\components\image.py src\core\layout_config.py src\core\presets.py src\ui\editor.py`
+  - [x] 新模板默认布局生成通过（`signal_lattice_max / deck_strip_v2`）
+  - [x] 既有单测继续通过：`venv\Scripts\python.exe -m unittest tests.test_image_processor tests.test_layout_config`

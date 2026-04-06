@@ -14,11 +14,11 @@
 
 ## 阶段 2：轻框图形视觉层
 
-- [ ] 新增共享 chrome helper
-- [ ] 新增 `variant-rail / corner / ribbon / hero`
-- [ ] 改造核心组件的轻框渲染路径
-- [ ] 新增 2 套 UI V2 模板
-- [ ] 完成阶段 commit
+- [x] 新增共享 chrome helper
+- [x] 新增 `variant-rail / corner / ribbon / hero`
+- [x] 改造核心组件的轻框渲染路径
+- [x] 新增 2 套 UI V2 模板
+- [x] 完成阶段 commit
 
 ## 阶段 3：收口与文档
 

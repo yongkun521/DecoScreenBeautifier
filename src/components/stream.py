@@ -37,7 +37,11 @@ class DataStreamWidget(BaseWidget):
             self._buffer.insert(0, self._random_line(width))
 
         lines = [self._stylize_line(line) for line in self._buffer]
-        self.update(Align.center(Group(*lines), vertical="middle"))
+        content = Group(*lines)
+        if self.uses_light_chrome():
+            self.update(self.compose_widget_content(content, footer="stream relay"))
+            return
+        self.update(Align.center(content, vertical="middle"))
 
     def _random_line(self, width: int) -> str:
         preset = self.get_visual_preset()

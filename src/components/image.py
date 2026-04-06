@@ -88,7 +88,11 @@ class ImageWidget(BaseWidget):
             render_mode=self.image_render_mode,
             sample_scale=self._get_render_scale(),
         )
-        self.update(Align.center(self.ascii_art, vertical="middle"))
+        if self.uses_light_chrome():
+            footer = f"{self.image_render_mode} | {self.image_display_mode}"
+            self.update(self.compose_widget_content(self.ascii_art, footer=footer))
+        else:
+            self.update(Align.center(self.ascii_art, vertical="middle"))
 
     def on_resize(self) -> None:
         self.load_image()

@@ -29,6 +29,17 @@ class StatusBadge(BaseWidget):
         disk = self._disk_usage()
         status, color = self._status_level(cpu, mem, disk)
 
+        if self.uses_light_chrome():
+            label_color = self.get_style_color("muted", "grey70")
+            lines = Group(
+                Text.assemble(("STATE ", f"bold {label_color}"), (status, f"bold {color}")),
+                Text.assemble(("CPU ", f"bold {label_color}"), self._bar(cpu, width=8, color=self.get_style_color("cpu_ok", "green")), (f" {cpu:.0f}%", color)),
+                Text.assemble(("MEM ", f"bold {label_color}"), self._bar(mem, width=8, color=self.get_style_color("mem", "cyan")), (f" {mem:.0f}%", self.get_style_color("mem", "cyan"))),
+                Text.assemble(("DSK ", f"bold {label_color}"), self._bar(disk, width=8, color=self.get_style_color("warning", "yellow")), (f" {disk:.0f}%", self.get_style_color("warning", "yellow"))),
+            )
+            self.update(self.compose_widget_content(lines, footer="status bus"))
+            return
+
         label_color = self.get_style_color("muted", "grey70")
         cpu_bar = self._bar(cpu, width=10, color=self.get_style_color("cpu_ok", "green"))
         mem_bar = self._bar(mem, width=10, color=self.get_style_color("mem", "cyan"))
