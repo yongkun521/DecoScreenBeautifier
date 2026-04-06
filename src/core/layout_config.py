@@ -6,6 +6,8 @@ from typing import Dict, List, Optional, Tuple
 from core.presets import DEFAULT_TEMPLATE_ID
 
 DEFAULT_IMAGE_PATH = "assets/logo.png"
+DEFAULT_IMAGE_DISPLAY_MODE = "fit"
+IMAGE_DISPLAY_MODES = ("fit", "fill", "stretch")
 DEFAULT_MANUAL_ROWS = 0
 
 DEFAULT_ACTIVE_COMPONENTS = ["p_hardware", "p_network", "p_clock", "p_audio", "p_image"]
@@ -148,6 +150,13 @@ def canonical_component_base_id(component_id: object) -> Optional[str]:
     return None
 
 
+def normalize_image_display_mode(value: object) -> str:
+    mode = str(value or "").strip().lower()
+    if mode in IMAGE_DISPLAY_MODES:
+        return mode
+    return DEFAULT_IMAGE_DISPLAY_MODE
+
+
 def grid_size_for_layout_class(layout_class: Optional[str]) -> Tuple[int, int]:
     return LAYOUT_GRID_SIZES.get(str(layout_class or ""), (6, 4))
 
@@ -185,6 +194,7 @@ def build_default_layout(template: Optional[dict]) -> Dict[str, object]:
         }
         if type_name == "ImageWidget":
             component["image_path"] = DEFAULT_IMAGE_PATH
+            component["image_display_mode"] = DEFAULT_IMAGE_DISPLAY_MODE
         components.append(component)
 
     _auto_place_components(components, cols, rows)
@@ -260,8 +270,13 @@ def sanitize_layout_data(layout_data: object, template: Optional[dict]) -> Dict[
         component["id"] = component_id
         component["type"] = type_name
         component["pos"] = [placed[0], placed[1], placed[2], placed[3]]
-        if type_name != "ImageWidget":
+        if type_name == "ImageWidget":
+            component["image_display_mode"] = normalize_image_display_mode(
+                component.get("image_display_mode")
+            )
+        else:
             component.pop("image_path", None)
+            component.pop("image_display_mode", None)
 
         seen_ids.add(component_id)
         occupied |= cells_for_pos(*placed)

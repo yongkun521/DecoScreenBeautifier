@@ -1,14 +1,20 @@
-from textual.screen import Screen
-from textual.containers import Grid, Vertical
-from textual.widgets import Header, Footer, Button, Label, ListView, ListItem, Static, Select
+from textual import events
 from textual.app import ComposeResult
+from textual.containers import Grid, Vertical
+from textual.screen import Screen
+from textual.widgets import Button, Footer, Header, Label, ListItem, ListView, Select, Static
+
 from config.manager import ConfigManager
+
 
 class TemplateScreen(Screen):
     """
     模板选择界面
     """
-    
+
+    COMPACT_WIDTH = 110
+    COMPACT_HEIGHT = 28
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.config_manager = None
@@ -22,42 +28,42 @@ class TemplateScreen(Screen):
     def compose(self) -> ComposeResult:
         """构建模板界面布局"""
         yield Header()
-        
+
         with Vertical(id="template_layout"):
             yield Label("Select a Template", id="template_title")
-            
-            # 获取所有模板
+
             self.config_manager = self.app.config_manager if hasattr(self.app, "config_manager") else ConfigManager()
             self._templates = self.config_manager.list_templates()
             self._template_lookup = {tpl["id"]: tpl for tpl in self._templates}
             self._selected_template_id = self.config_manager.settings.get("template_id")
 
-            with Grid(id="template_filters"):
-                yield Select(
-                    self._build_filter_options("screen_profile"),
-                    prompt="Profile",
-                    value=self._filter_profile,
-                    allow_blank=False,
-                    id="filter_profile",
-                )
-                yield Select(
-                    self._build_filter_options("purpose_tags"),
-                    prompt="Purpose",
-                    value=self._filter_purpose,
-                    allow_blank=False,
-                    id="filter_purpose",
-                )
-                yield Select(
-                    self._build_filter_options("style_tags"),
-                    prompt="Style",
-                    value=self._filter_style,
-                    allow_blank=False,
-                    id="filter_style",
-                )
+            with Vertical(id="template_body"):
+                with Grid(id="template_filters"):
+                    yield Select(
+                        self._build_filter_options("screen_profile"),
+                        prompt="Profile",
+                        value=self._filter_profile,
+                        allow_blank=False,
+                        id="filter_profile",
+                    )
+                    yield Select(
+                        self._build_filter_options("purpose_tags"),
+                        prompt="Purpose",
+                        value=self._filter_purpose,
+                        allow_blank=False,
+                        id="filter_purpose",
+                    )
+                    yield Select(
+                        self._build_filter_options("style_tags"),
+                        prompt="Style",
+                        value=self._filter_style,
+                        allow_blank=False,
+                        id="filter_style",
+                    )
 
-            yield ListView(id="template_list")
-            yield Static("", id="template_desc")
-            
+                yield ListView(id="template_list")
+                yield Static("", id="template_desc")
+
             with Grid(id="template_actions"):
                 yield Button("Apply", variant="success", id="btn_apply")
                 yield Button("Cancel", variant="error", id="btn_cancel")
@@ -86,7 +92,11 @@ class TemplateScreen(Screen):
             self._update_description(template_id)
 
     async def on_mount(self) -> None:
+        self._update_responsive_layout()
         await self._refresh_template_list(keep_selection=True)
+
+    def on_resize(self, event: events.Resize) -> None:
+        self._update_responsive_layout()
 
     async def on_select_changed(self, event: Select.Changed) -> None:
         if event.select.id == "filter_profile":
@@ -162,3 +172,7 @@ class TemplateScreen(Screen):
         detail = f"{desc}\nProfile: {profile} · Resolution: {resolution}\nPurpose: {purpose} · Style: {style}"
         desc_widget = self.query_one("#template_desc", Static)
         desc_widget.update(detail)
+
+    def _update_responsive_layout(self) -> None:
+        compact = self.size.width < self.COMPACT_WIDTH or self.size.height < self.COMPACT_HEIGHT
+        self.set_class(compact, "compact-layout")

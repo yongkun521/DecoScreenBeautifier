@@ -9,7 +9,11 @@ from .network import NetworkMonitor
 from .status import StatusBadge
 from .stream import DataStreamWidget
 from .ticker import InfoTicker
-from core.layout_config import DEFAULT_IMAGE_PATH
+from core.layout_config import (
+    DEFAULT_IMAGE_DISPLAY_MODE,
+    DEFAULT_IMAGE_PATH,
+    normalize_image_display_mode,
+)
 
 COMPONENT_REGISTRY = {
     "HardwareMonitor": HardwareMonitor,
@@ -35,9 +39,14 @@ def create_component_widget(
     kwargs = {"id": component_id}
     if component_cls is ImageWidget:
         image_path = ""
+        image_display_mode = DEFAULT_IMAGE_DISPLAY_MODE
         if isinstance(component_config, dict):
             image_path = str(component_config.get("image_path") or "").strip()
+            image_display_mode = normalize_image_display_mode(
+                component_config.get("image_display_mode")
+            )
         kwargs["image_path"] = image_path or DEFAULT_IMAGE_PATH
+        kwargs["image_display_mode"] = image_display_mode
     return component_cls(**kwargs)
 
 __all__ = [

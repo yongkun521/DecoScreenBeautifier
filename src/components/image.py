@@ -5,6 +5,8 @@ from pathlib import Path
 from rich.align import Align
 from rich.text import Text
 
+from core.layout_config import DEFAULT_IMAGE_DISPLAY_MODE, normalize_image_display_mode
+
 from .base import BaseWidget
 
 try:
@@ -26,9 +28,15 @@ class ImageWidget(BaseWidget):
     }
     """
 
-    def __init__(self, image_path: str = None, **kwargs):
+    def __init__(
+        self,
+        image_path: str = None,
+        image_display_mode: str = DEFAULT_IMAGE_DISPLAY_MODE,
+        **kwargs,
+    ):
         super().__init__(title="VISUAL", update_interval=0, **kwargs)
         self.image_path = image_path
+        self.image_display_mode = normalize_image_display_mode(image_display_mode)
         self.processor = ImageProcessor() if ImageProcessor is not None else None
         self.ascii_art = None
 
@@ -76,6 +84,7 @@ class ImageWidget(BaseWidget):
             width=render_w,
             height=render_h,
             charset=charset,
+            display_mode=self.image_display_mode,
         )
         self.update(Align.center(self.ascii_art, vertical="middle"))
 
