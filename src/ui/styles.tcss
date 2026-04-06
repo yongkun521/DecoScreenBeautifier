@@ -672,30 +672,56 @@ Screen.layout-strip-plus #p_stream { column-span: 12; row-span: 1; }
     margin-top: 1;
 }
 
-Screen.compact-layout #editor_layout {
+Screen.editor-condensed #toolbox {
+    width: 22%;
+    min-width: 18;
+}
+
+Screen.editor-condensed #editor_canvas {
+    width: 43%;
+    min-width: 30;
+}
+
+Screen.editor-condensed #properties {
+    width: 35%;
+    min-width: 24;
+}
+
+Screen.editor-condensed #grid_row_actions,
+Screen.editor-condensed #image_path_actions,
+Screen.editor-condensed #properties_main_actions {
+    layout: vertical;
+}
+
+Screen.editor-condensed #grid_row_actions Button,
+Screen.editor-condensed #image_path_actions Button,
+Screen.editor-condensed #properties_main_actions Button {
+    width: 100%;
+    margin-bottom: 1;
+}
+
+Screen.editor-stacked #editor_layout {
     layout: vertical;
     overflow-y: auto;
 }
 
-Screen.compact-layout #toolbox,
-Screen.compact-layout #editor_canvas,
-Screen.compact-layout #properties {
+Screen.editor-stacked #toolbox,
+Screen.editor-stacked #editor_canvas,
+Screen.editor-stacked #properties {
     width: 100%;
-    height: auto;
     min-width: 0;
 }
 
-Screen.compact-layout #grid_row_actions,
-Screen.compact-layout #image_path_actions,
-Screen.compact-layout #properties_main_actions {
-    layout: vertical;
+Screen.editor-stacked #toolbox {
+    height: 11;
 }
 
-Screen.compact-layout #grid_row_actions Button,
-Screen.compact-layout #image_path_actions Button,
-Screen.compact-layout #properties_main_actions Button {
-    width: 100%;
-    margin-bottom: 1;
+Screen.editor-stacked #editor_canvas {
+    height: 16;
+}
+
+Screen.editor-stacked #properties {
+    height: 1fr;
 }
 
 /* 模板选择界面 */

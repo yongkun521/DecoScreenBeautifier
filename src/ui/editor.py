@@ -59,8 +59,9 @@ TOKEN_SET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 class EditorScreen(Screen):
     """Layout editor screen."""
 
-    COMPACT_WIDTH = 140
-    COMPACT_HEIGHT = 36
+    CONDENSED_WIDTH = 132
+    CONDENSED_HEIGHT = 34
+    STACKED_WIDTH = 96
     AUTO_APPLY_INPUT_IDS = {
         "prop_col",
         "prop_row",
@@ -330,8 +331,12 @@ class EditorScreen(Screen):
         )
 
     def _update_responsive_layout(self) -> None:
-        compact = self.size.width < self.COMPACT_WIDTH or self.size.height < self.COMPACT_HEIGHT
-        self.set_class(compact, "compact-layout")
+        width = self.size.width
+        height = self.size.height
+        condensed = width < self.CONDENSED_WIDTH or height < self.CONDENSED_HEIGHT
+        stacked = width < self.STACKED_WIDTH
+        self.set_class(condensed, "editor-condensed")
+        self.set_class(stacked, "editor-stacked")
 
     def _refresh_global_settings(self) -> None:
         settings = self.config_manager.settings if self.config_manager else {}
