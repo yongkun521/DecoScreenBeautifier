@@ -26,6 +26,8 @@ DEFAULT_WINDOW_TARGET = "new"
 DEFAULT_BUNDLED_PROFILE_NAME = "DecoScreenBeautifier-CRT"
 DEFAULT_WT_SETTINGS_RELATIVE_PATH = Path("settings") / "settings.json"
 DEFAULT_PIXEL_SHADER_FILE_NAME = "deco_placeholder.hlsl"
+DEFAULT_WT_ZOOM_OUT_KEY = "ctrl+shift+f7"
+DEFAULT_WT_ZOOM_IN_KEY = "ctrl+shift+f8"
 DEFAULT_PIXEL_SHADER_RELATIVE_PATH = (
     Path("vendor") / "windows_terminal" / "shaders" / DEFAULT_PIXEL_SHADER_FILE_NAME
 )
@@ -336,6 +338,34 @@ def _action_is_toggle_focus_mode(item: Mapping[str, Any]) -> bool:
     return False
 
 
+def _extract_action_keys(item: Mapping[str, Any]) -> list[str]:
+    keys = item.get("keys")
+    if isinstance(keys, str):
+        normalized = _normalize_key_binding(keys)
+        return [normalized] if normalized else []
+    if isinstance(keys, list):
+        normalized_keys = [
+            _normalize_key_binding(key)
+            for key in keys
+            if _normalize_key_binding(key)
+        ]
+        return normalized_keys
+    return []
+
+
+def _action_adjust_font_size_delta(item: Mapping[str, Any]) -> Optional[int]:
+    command = item.get("command")
+    if not isinstance(command, dict):
+        return None
+    action_name = str(command.get("action") or "").strip().lower()
+    if action_name != "adjustfontsize":
+        return None
+    try:
+        return int(command.get("delta", 0))
+    except (TypeError, ValueError):
+        return None
+
+
 def _ensure_focus_toggle_binding(
     settings_document: dict[str, Any],
     terminal_settings: Mapping[str, Any],
@@ -368,6 +398,47 @@ def _ensure_focus_toggle_binding(
             "keys": [key_text],
         }
     )
+
+
+def _ensure_zoom_binding(
+    settings_document: dict[str, Any],
+    *,
+    key_text: str,
+    delta: int,
+) -> None:
+    if not key_text:
+        return
+
+    actions = _extract_actions(settings_document)
+    for item in actions:
+        if _action_adjust_font_size_delta(item) != delta:
+            continue
+        if key_text in _extract_action_keys(item):
+            return
+
+    actions.append(
+        {
+            "command": {
+                "action": "adjustFontSize",
+                "delta": delta,
+            },
+            "keys": [key_text],
+        }
+    )
+
+
+def _ensure_zoom_bindings(
+    settings_document: dict[str, Any],
+    terminal_settings: Mapping[str, Any],
+) -> None:
+    zoom_in_key = _normalize_key_binding(
+        terminal_settings.get("zoom_in_key", DEFAULT_WT_ZOOM_IN_KEY)
+    )
+    zoom_out_key = _normalize_key_binding(
+        terminal_settings.get("zoom_out_key", DEFAULT_WT_ZOOM_OUT_KEY)
+    )
+    _ensure_zoom_binding(settings_document, key_text=zoom_in_key, delta=1)
+    _ensure_zoom_binding(settings_document, key_text=zoom_out_key, delta=-1)
 
 
 def _resolve_virtual_key(key_token: str) -> Optional[int]:
@@ -572,7 +643,7 @@ def adjust_zoom_in_running_wt(
         return False, "Not running inside Windows Terminal"
 
     key_name = "zoom_in_key" if zoom_in else "zoom_out_key"
-    default_key = "ctrl+plus" if zoom_in else "ctrl+minus"
+    default_key = DEFAULT_WT_ZOOM_IN_KEY if zoom_in else DEFAULT_WT_ZOOM_OUT_KEY
     key_text = _normalize_key_binding(settings.get(key_name, default_key))
     if not key_text:
         key_text = default_key
@@ -688,6 +759,7 @@ def _ensure_bundled_wt_profile(
         pixel_shader_path=pixel_shader_path,
     )
     _ensure_focus_toggle_binding(settings_document, terminal_settings)
+    _ensure_zoom_bindings(settings_document, terminal_settings)
 
     try:
         _write_json_document(settings_path, settings_document)

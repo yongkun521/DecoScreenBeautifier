@@ -14,6 +14,17 @@ from core.presets import (
     list_templates,
 )
 
+DEFAULT_WT_ZOOM_OUT_KEY = "ctrl+shift+f7"
+DEFAULT_WT_ZOOM_IN_KEY = "ctrl+shift+f8"
+
+
+def _normalize_key_binding(value: object) -> str:
+    text = str(value or "").strip().lower()
+    if not text:
+        return ""
+    return text.replace(" ", "")
+
+
 class ConfigManager:
     """
     配置管理器
@@ -98,8 +109,8 @@ class ConfigManager:
             "force_bundled_wt_only": True,
             "focus_mode": True,
             "focus_mode_toggle_key": "alt+shift+f",
-            "zoom_in_key": "ctrl+plus",
-            "zoom_out_key": "ctrl+minus",
+            "zoom_in_key": DEFAULT_WT_ZOOM_IN_KEY,
+            "zoom_out_key": DEFAULT_WT_ZOOM_OUT_KEY,
             "fullscreen": False,
             "maximized": False,
             "window_target": "new",
@@ -241,8 +252,8 @@ class ConfigManager:
             "force_bundled_wt_only": True,
             "focus_mode": True,
             "focus_mode_toggle_key": "alt+shift+f",
-            "zoom_in_key": "ctrl+plus",
-            "zoom_out_key": "ctrl+minus",
+            "zoom_in_key": DEFAULT_WT_ZOOM_IN_KEY,
+            "zoom_out_key": DEFAULT_WT_ZOOM_OUT_KEY,
             "fullscreen": False,
             "maximized": False,
             "window_target": "new",
@@ -262,6 +273,10 @@ class ConfigManager:
         }
         for key, value in terminal_defaults.items():
             terminal_settings.setdefault(key, value)
+        if _normalize_key_binding(terminal_settings.get("zoom_in_key")) in {"", "ctrl+plus"}:
+            terminal_settings["zoom_in_key"] = DEFAULT_WT_ZOOM_IN_KEY
+        if _normalize_key_binding(terminal_settings.get("zoom_out_key")) in {"", "ctrl+minus"}:
+            terminal_settings["zoom_out_key"] = DEFAULT_WT_ZOOM_OUT_KEY
         deco_effects = terminal_settings.get("deco_effects")
         if not isinstance(deco_effects, dict):
             deco_effects = {}
