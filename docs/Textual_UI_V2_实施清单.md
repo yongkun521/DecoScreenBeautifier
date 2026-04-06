@@ -22,8 +22,8 @@
 
 ## 阶段 3：收口与文档
 
-- [ ] 补充更多回归测试
-- [ ] 更新 `docs/自定义界面说明.md`
-- [ ] 更新 `docs/观察但未处理的问题.md`
-- [ ] 收口 `docs/Todolist.md`
-- [ ] 完成阶段 commit
+- [x] 补充更多回归测试
+- [x] 更新 `docs/自定义界面说明.md`
+- [x] 更新 `docs/观察但未处理的问题.md`
+- [x] 收口 `docs/Todolist.md`
+- [x] 完成阶段 commit

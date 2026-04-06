@@ -1,9 +1,11 @@
 import unittest
 
+from components import create_component_widget
 from core.layout_config import (
     build_default_layout,
     sanitize_layout_data,
 )
+from core.presets import get_template
 
 
 class LayoutConfigTest(unittest.TestCase):
@@ -57,3 +59,28 @@ class LayoutConfigTest(unittest.TestCase):
         }
         legacy_sanitized = sanitize_layout_data(legacy_layout, template)
         self.assertEqual(legacy_sanitized["components"][0]["image_render_mode"], "ascii")
+
+    def test_signal_lattice_template_defaults_to_pixel_hero_image(self) -> None:
+        template = get_template("signal_lattice_max")
+        self.assertIsNotNone(template)
+
+        layout = build_default_layout(template)
+        image_component = next(
+            component for component in layout["components"] if component["type"] == "ImageWidget"
+        )
+        self.assertEqual(image_component["image_render_mode"], "pixel")
+        self.assertEqual(image_component["image_display_mode"], "fill")
+        self.assertEqual(image_component["variant"], "variant-hero")
+
+    def test_create_component_widget_passes_image_render_mode(self) -> None:
+        widget = create_component_widget(
+            "ImageWidget",
+            "p_image",
+            {
+                "image_path": "assets/logo.png",
+                "image_display_mode": "fill",
+                "image_render_mode": "pixel",
+            },
+        )
+        self.assertEqual(widget.image_display_mode, "fill")
+        self.assertEqual(widget.image_render_mode, "pixel")

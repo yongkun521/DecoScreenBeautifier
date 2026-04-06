@@ -384,3 +384,15 @@
   - [x] `venv\Scripts\python.exe -m py_compile src\components\chrome.py src\components\base.py src\components\hardware.py src\components\network.py src\components\clock.py src\components\status.py src\components\stream.py src\components\ticker.py src\components\image.py src\core\layout_config.py src\core\presets.py src\ui\editor.py`
   - [x] 新模板默认布局生成通过（`signal_lattice_max / deck_strip_v2`）
   - [x] 既有单测继续通过：`venv\Scripts\python.exe -m unittest tests.test_image_processor tests.test_layout_config`
+
+## 2026-04-06 Textual UI V2 阶段 3（测试与文档收口）
+- [x] 回归测试增强：
+  - [x] 新增新模板默认值校验（`signal_lattice_max` 默认 `pixel + fill + variant-hero`）
+  - [x] 新增组件创建链路校验（`create_component_widget` 能正确传递 `image_render_mode`）
+  - [x] 回归结果：`venv\Scripts\python.exe -m unittest tests.test_image_processor tests.test_layout_config`
+- [x] 用户文档更新：
+  - [x] `docs/自定义界面说明.md` 补充新模板说明
+  - [x] `docs/自定义界面说明.md` 补充 `Visual Variant`
+  - [x] `docs/自定义界面说明.md` 补充 `Image Render`
+- [x] 观察项补充：
+  - [x] `docs/观察但未处理的问题.md` 记录 GIF 尚未并入新的静态图片渲染链
