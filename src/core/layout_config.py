@@ -7,7 +7,9 @@ from core.presets import DEFAULT_TEMPLATE_ID
 
 DEFAULT_IMAGE_PATH = "assets/logo.png"
 DEFAULT_IMAGE_DISPLAY_MODE = "fit"
+DEFAULT_IMAGE_RENDER_MODE = "ascii"
 IMAGE_DISPLAY_MODES = ("fit", "fill", "stretch")
+IMAGE_RENDER_MODES = ("ascii", "pixel")
 DEFAULT_MANUAL_ROWS = 0
 
 DEFAULT_ACTIVE_COMPONENTS = ["p_hardware", "p_network", "p_clock", "p_audio", "p_image"]
@@ -157,6 +159,13 @@ def normalize_image_display_mode(value: object) -> str:
     return DEFAULT_IMAGE_DISPLAY_MODE
 
 
+def normalize_image_render_mode(value: object) -> str:
+    mode = str(value or "").strip().lower()
+    if mode in IMAGE_RENDER_MODES:
+        return mode
+    return DEFAULT_IMAGE_RENDER_MODE
+
+
 def grid_size_for_layout_class(layout_class: Optional[str]) -> Tuple[int, int]:
     return LAYOUT_GRID_SIZES.get(str(layout_class or ""), (6, 4))
 
@@ -195,6 +204,7 @@ def build_default_layout(template: Optional[dict]) -> Dict[str, object]:
         if type_name == "ImageWidget":
             component["image_path"] = DEFAULT_IMAGE_PATH
             component["image_display_mode"] = DEFAULT_IMAGE_DISPLAY_MODE
+            component["image_render_mode"] = DEFAULT_IMAGE_RENDER_MODE
         components.append(component)
 
     _auto_place_components(components, cols, rows)
@@ -274,9 +284,13 @@ def sanitize_layout_data(layout_data: object, template: Optional[dict]) -> Dict[
             component["image_display_mode"] = normalize_image_display_mode(
                 component.get("image_display_mode")
             )
+            component["image_render_mode"] = normalize_image_render_mode(
+                component.get("image_render_mode")
+            )
         else:
             component.pop("image_path", None)
             component.pop("image_display_mode", None)
+            component.pop("image_render_mode", None)
 
         seen_ids.add(component_id)
         occupied |= cells_for_pos(*placed)

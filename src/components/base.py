@@ -131,6 +131,25 @@ class BaseWidget(Static):
         colors = preset.get("colors", {}) if isinstance(preset, dict) else {}
         return colors.get(key, default)
 
+    def has_any_class(self, *class_names: str) -> bool:
+        classes = set(self.classes)
+        return any(class_name in classes for class_name in class_names)
+
+    def get_content_size(self, *, default: tuple[int, int] = (40, 20)) -> tuple[int, int]:
+        width = self.size.width or default[0]
+        height = self.size.height or default[1]
+
+        horizontal_chrome = 0 if self.has_any_class(
+            "variant-minimal",
+            "variant-ribbon",
+            "variant-hero",
+        ) else 2
+        vertical_chrome = 0
+        return (
+            max(1, width - horizontal_chrome),
+            max(1, height - vertical_chrome),
+        )
+
     def _apply_style_preset(self) -> None:
         preset = self.get_style_preset()
         title_style = preset.get("title_style")

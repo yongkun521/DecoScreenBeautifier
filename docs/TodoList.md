@@ -340,3 +340,21 @@
   - [x] 移除必须点击 `Apply Changes` 才生效的流程，组件属性有效后自动应用到当前预览。
   - [x] `Save Layout` 保留为显式写盘动作，职责与“自动应用”分离。
   - [x] 离开编辑器时若存在未保存布局，弹出提醒让用户选择保存、放弃或继续编辑。
+
+## 2026-04-06 Textual UI V2 阶段 1（图片渲染链路）
+- [x] 图片组件布局数据新增 `image_render_mode` 字段：
+  - [x] 支持 `ascii / pixel` 两种模式。
+  - [x] 旧布局缺省时自动回填为 `ascii`，保持兼容。
+- [x] 图片处理器新增 `pixel` 模式：
+  - [x] 使用半块字符 `▀` + 前景/背景色组合输出彩色伪像素图。
+  - [x] 保留原有 `ascii` 模式，兼容旧模板与旧布局。
+- [x] `global_scale` 语义调整：
+  - [x] 不再直接放大最终字符占位尺寸。
+  - [x] 仅影响图片采样密度，降低换行/裁切/密度怪异问题。
+- [x] Textual 编辑器属性面板增强：
+  - [x] 新增 `Image Render` 选择器。
+  - [x] 新增当前组件 `Visual Variant` 选择器，为后续轻框视觉层打基础。
+- [x] 回归校验：
+  - [x] 新增 `tests/test_image_processor.py`
+  - [x] 新增 `tests/test_layout_config.py`
+  - [x] 执行 `venv\Scripts\python.exe -m unittest tests.test_image_processor tests.test_layout_config`

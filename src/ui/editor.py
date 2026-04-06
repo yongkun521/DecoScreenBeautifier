@@ -12,6 +12,7 @@ from textual.widgets import Button, Footer, Header, Input, Label, ListItem, List
 from config.manager import ConfigManager
 from core.layout_config import (
     DEFAULT_IMAGE_DISPLAY_MODE,
+    DEFAULT_IMAGE_RENDER_MODE,
     add_manual_empty_row,
     build_default_layout,
     cells_for_pos,
@@ -19,6 +20,7 @@ from core.layout_config import (
     grid_size_for_layout_class,
     layout_usage,
     normalize_image_display_mode,
+    normalize_image_render_mode,
     remove_manual_empty_row,
     sanitize_layout_data,
 )
@@ -54,6 +56,20 @@ COMPONENT_TOOLS: List[ComponentTool] = [
 ]
 
 TOKEN_SET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+VARIANT_OPTIONS = [
+    ("Default", ""),
+    ("Dense", "variant-dense"),
+    ("Slim", "variant-slim"),
+    ("Compact", "variant-compact"),
+    ("Minimal", "variant-minimal"),
+    ("Banner", "variant-banner"),
+    ("Glow", "variant-glow"),
+    ("Outline", "variant-outline"),
+    ("Rail", "variant-rail"),
+    ("Corner", "variant-corner"),
+    ("Ribbon", "variant-ribbon"),
+    ("Hero", "variant-hero"),
+]
 
 
 class EditorScreen(Screen):
@@ -132,6 +148,13 @@ class EditorScreen(Screen):
                     yield Input(placeholder="Column Span", id="prop_col_span")
                     yield Label("Row Span", classes="prop_label")
                     yield Input(placeholder="Row Span", id="prop_row_span")
+                    yield Label("Visual Variant", classes="prop_section")
+                    yield Select(
+                        VARIANT_OPTIONS,
+                        value="",
+                        allow_blank=False,
+                        id="prop_variant",
+                    )
                     yield Label("Image Display (ImageWidget only)", classes="prop_section")
                     yield Select(
                         [
@@ -142,6 +165,16 @@ class EditorScreen(Screen):
                         value=DEFAULT_IMAGE_DISPLAY_MODE,
                         allow_blank=False,
                         id="prop_image_mode",
+                    )
+                    yield Label("Image Render (ImageWidget only)", classes="prop_section")
+                    yield Select(
+                        [
+                            ("ASCII", "ascii"),
+                            ("Pixel", "pixel"),
+                        ],
+                        value=DEFAULT_IMAGE_RENDER_MODE,
+                        allow_blank=False,
+                        id="prop_image_render_mode",
                     )
                     yield Label("Image Path (ImageWidget only)", classes="prop_section")
                     yield Input(placeholder="Leave blank to use built-in logo", id="prop_image_path")
@@ -215,7 +248,7 @@ class EditorScreen(Screen):
     async def on_select_changed(self, event: Select.Changed) -> None:
         if self._suppress_auto_apply:
             return
-        if event.select.id == "prop_image_mode":
+        if event.select.id in {"prop_variant", "prop_image_mode", "prop_image_render_mode"}:
             await self._auto_apply_component_changes(notify=False)
 
     def action_paste_from_system_clipboard(self) -> None:
@@ -404,7 +437,9 @@ class EditorScreen(Screen):
             self._set_input_value("#prop_row", "")
             self._set_input_value("#prop_col_span", "")
             self._set_input_value("#prop_row_span", "")
+            self._set_select_value("#prop_variant", "")
             self._set_select_value("#prop_image_mode", DEFAULT_IMAGE_DISPLAY_MODE)
+            self._set_select_value("#prop_image_render_mode", DEFAULT_IMAGE_RENDER_MODE)
             self._set_input_value("#prop_image_path", "")
             return
         component = self._get_component(self.selected_component_id)
@@ -415,7 +450,9 @@ class EditorScreen(Screen):
             self._set_input_value("#prop_row", "")
             self._set_input_value("#prop_col_span", "")
             self._set_input_value("#prop_row_span", "")
+            self._set_select_value("#prop_variant", "")
             self._set_select_value("#prop_image_mode", DEFAULT_IMAGE_DISPLAY_MODE)
+            self._set_select_value("#prop_image_render_mode", DEFAULT_IMAGE_RENDER_MODE)
             self._set_input_value("#prop_image_path", "")
             return
         self.query_one("#prop_selected", Static).update(
@@ -426,14 +463,20 @@ class EditorScreen(Screen):
         self._set_input_value("#prop_row", str(row))
         self._set_input_value("#prop_col_span", str(col_span))
         self._set_input_value("#prop_row_span", str(row_span))
+        self._set_select_value("#prop_variant", str(component.get("variant") or ""))
         if component.get("type") == "ImageWidget":
             self._set_select_value(
                 "#prop_image_mode",
                 normalize_image_display_mode(component.get("image_display_mode")),
             )
+            self._set_select_value(
+                "#prop_image_render_mode",
+                normalize_image_render_mode(component.get("image_render_mode")),
+            )
             self._set_input_value("#prop_image_path", str(component.get("image_path") or ""))
         else:
             self._set_select_value("#prop_image_mode", DEFAULT_IMAGE_DISPLAY_MODE)
+            self._set_select_value("#prop_image_render_mode", DEFAULT_IMAGE_RENDER_MODE)
             self._set_input_value("#prop_image_path", "")
 
     def _set_selected_tool(self, item: Optional[ListItem]) -> None:
@@ -544,6 +587,7 @@ class EditorScreen(Screen):
         if tool.type_name == "ImageWidget":
             component["image_path"] = ""
             component["image_display_mode"] = DEFAULT_IMAGE_DISPLAY_MODE
+            component["image_render_mode"] = DEFAULT_IMAGE_RENDER_MODE
         return component
 
     async def _handle_browse_image(self) -> None:
@@ -617,10 +661,18 @@ class EditorScreen(Screen):
             return False
 
         component["pos"] = [col, row, col_span, row_span]
+        selected_variant = self._get_select_value("#prop_variant")
+        if selected_variant:
+            component["variant"] = selected_variant
+        else:
+            component.pop("variant", None)
         image_path = self._get_input_value("#prop_image_path")
         if component.get("type") == "ImageWidget":
             component["image_display_mode"] = normalize_image_display_mode(
                 self._get_select_value("#prop_image_mode")
+            )
+            component["image_render_mode"] = normalize_image_render_mode(
+                self._get_select_value("#prop_image_render_mode")
             )
             if image_path:
                 component["image_path"] = image_path
@@ -815,7 +867,13 @@ class EditorScreen(Screen):
         return self.query_one(selector, Input).value.strip()
 
     def _set_select_value(self, selector: str, value: str) -> None:
-        self.query_one(selector, Select).value = normalize_image_display_mode(value)
+        normalizers = {
+            "#prop_image_mode": normalize_image_display_mode,
+            "#prop_image_render_mode": normalize_image_render_mode,
+            "#prop_variant": lambda raw: str(raw or ""),
+        }
+        normalized_value = normalizers.get(selector, lambda raw: str(raw or ""))(value)
+        self.query_one(selector, Select).value = normalized_value
 
     def _get_select_value(self, selector: str) -> str:
         return str(self.query_one(selector, Select).value)

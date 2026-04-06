@@ -5,7 +5,12 @@ from pathlib import Path
 from rich.align import Align
 from rich.text import Text
 
-from core.layout_config import DEFAULT_IMAGE_DISPLAY_MODE, normalize_image_display_mode
+from core.layout_config import (
+    DEFAULT_IMAGE_DISPLAY_MODE,
+    DEFAULT_IMAGE_RENDER_MODE,
+    normalize_image_display_mode,
+    normalize_image_render_mode,
+)
 
 from .base import BaseWidget
 
@@ -32,11 +37,13 @@ class ImageWidget(BaseWidget):
         self,
         image_path: str = None,
         image_display_mode: str = DEFAULT_IMAGE_DISPLAY_MODE,
+        image_render_mode: str = DEFAULT_IMAGE_RENDER_MODE,
         **kwargs,
     ):
         super().__init__(title="VISUAL", update_interval=0, **kwargs)
         self.image_path = image_path
         self.image_display_mode = normalize_image_display_mode(image_display_mode)
+        self.image_render_mode = normalize_image_render_mode(image_render_mode)
         self.processor = ImageProcessor() if ImageProcessor is not None else None
         self.ascii_art = None
 
@@ -66,16 +73,9 @@ class ImageWidget(BaseWidget):
             )
             return
 
-        w, h = self.size.width, self.size.height
-        if w == 0 or h == 0:
-            w, h = 40, 20
-
-        w = max(1, w - 2)
-        h = max(1, h - 2)
-
-        scale = self._get_render_scale()
-        render_w = max(1, int(w * scale))
-        render_h = max(1, int(h * scale))
+        inner_width, inner_height = self.get_content_size(default=(40, 20))
+        render_w = inner_width
+        render_h = inner_height * 2 if self.image_render_mode == "pixel" else inner_height
         preset = self.get_visual_preset()
         charset = preset.get("image_chars") if preset else None
 
@@ -85,6 +85,8 @@ class ImageWidget(BaseWidget):
             height=render_h,
             charset=charset,
             display_mode=self.image_display_mode,
+            render_mode=self.image_render_mode,
+            sample_scale=self._get_render_scale(),
         )
         self.update(Align.center(self.ascii_art, vertical="middle"))
 

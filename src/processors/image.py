@@ -3,7 +3,12 @@ import numpy as np
 from PIL import Image
 from rich.text import Text
 
-from core.layout_config import DEFAULT_IMAGE_DISPLAY_MODE, normalize_image_display_mode
+from core.layout_config import (
+    DEFAULT_IMAGE_DISPLAY_MODE,
+    DEFAULT_IMAGE_RENDER_MODE,
+    normalize_image_display_mode,
+    normalize_image_render_mode,
+)
 
 
 class ImageProcessor:
@@ -18,7 +23,8 @@ class ImageProcessor:
     # 简化的字符集 (效果可能更清晰)
     SIMPLE_CHARS = "@%#*+=-:. "
 
-    CHAR_HEIGHT_RATIO = 0.5
+    ASCII_CHAR_HEIGHT_RATIO = 0.5
+    PIXEL_HEIGHT_RATIO = 1.0
 
     def process_image(
         self,
@@ -28,6 +34,8 @@ class ImageProcessor:
         color: bool = True,
         charset: str = None,
         display_mode: str = DEFAULT_IMAGE_DISPLAY_MODE,
+        render_mode: str = DEFAULT_IMAGE_RENDER_MODE,
+        sample_scale: float = 1.0,
     ) -> Text:
         """
         处理图像并返回 Rich Text 对象
@@ -37,36 +45,69 @@ class ImageProcessor:
         :param height: 目标高度 (字符数)，如果为 None 则按比例计算
         :param color: 是否使用 ANSI 颜色
         :param display_mode: 拉伸 / 填充 / 等比缩放
+        :param render_mode: ascii / pixel
+        :param sample_scale: 仅影响采样密度，不改变最终字符占位
         :return: Rich Text 对象
         """
         try:
-            # 使用 PIL 读取图像 (支持更多格式)
             pil_image = Image.open(image_path)
-            # 转换为 RGB
             pil_image = pil_image.convert("RGB")
-            # 转换为 numpy 数组以便 OpenCV 处理
             img = np.array(pil_image)
-            # OpenCV 默认为 BGR，PIL 为 RGB，如果后续用 cv2 处理颜色需注意，这里直接用 RGB
-            
-            width = max(1, int(width))
-
-            # 计算目标高度 (字符的高宽比通常是 2:1，所以高度要乘 0.5)
-            aspect_ratio = img.shape[0] / img.shape[1]
-            if height is None:
-                height = int(width * aspect_ratio * self.CHAR_HEIGHT_RATIO)
-            height = max(1, int(height))
-
-            resized_img = self._prepare_image(
+            return self.process_array(
                 img,
                 width=width,
                 height=height,
+                color=color,
+                charset=charset,
                 display_mode=display_mode,
+                render_mode=render_mode,
+                sample_scale=sample_scale,
             )
-            
-            return self._to_ascii(resized_img, color, charset)
-            
         except Exception as e:
             return Text(f"Image Error: {e}", style="red")
+
+    def process_array(
+        self,
+        img: np.ndarray,
+        *,
+        width: int,
+        height: int | None = None,
+        color: bool = True,
+        charset: str | None = None,
+        display_mode: str = DEFAULT_IMAGE_DISPLAY_MODE,
+        render_mode: str = DEFAULT_IMAGE_RENDER_MODE,
+        sample_scale: float = 1.0,
+    ) -> Text:
+        render_mode = normalize_image_render_mode(render_mode)
+        width = max(1, int(width))
+        aspect_ratio = img.shape[0] / max(1, img.shape[1])
+        height_ratio = self._height_ratio_for_mode(render_mode)
+        if height is None:
+            height = int(width * aspect_ratio * height_ratio)
+        height = max(1, int(height))
+
+        sample_scale = self._normalize_sample_scale(sample_scale)
+        working_width = max(1, int(round(width * sample_scale)))
+        working_height = max(1, int(round(height * sample_scale)))
+
+        prepared_img = self._prepare_image(
+            img,
+            width=working_width,
+            height=working_height,
+            display_mode=display_mode,
+            height_ratio=height_ratio,
+        )
+        if (working_width, working_height) != (width, height):
+            prepared_img = self._resize_image(
+                prepared_img,
+                width,
+                height,
+                prefer_pixel_art=sample_scale < 1.0,
+            )
+
+        if render_mode == "pixel":
+            return self._to_pixel(prepared_img, color=color)
+        return self._to_ascii(prepared_img, color=color, charset=charset)
 
     def _prepare_image(
         self,
@@ -75,20 +116,38 @@ class ImageProcessor:
         width: int,
         height: int,
         display_mode: str,
+        height_ratio: float,
     ) -> np.ndarray:
         mode = normalize_image_display_mode(display_mode)
         if mode == "stretch":
             return self._resize_image(img, width, height)
         if mode == "fill":
-            cropped = self._crop_to_fill(img, width=width, height=height)
+            cropped = self._crop_to_fill(
+                img,
+                width=width,
+                height=height,
+                height_ratio=height_ratio,
+            )
             return self._resize_image(cropped, width, height)
 
-        fit_width, fit_height = self._fit_size(img, width=width, height=height)
+        fit_width, fit_height = self._fit_size(
+            img,
+            width=width,
+            height=height,
+            height_ratio=height_ratio,
+        )
         return self._resize_image(img, fit_width, fit_height)
 
-    def _fit_size(self, img: np.ndarray, *, width: int, height: int) -> tuple[int, int]:
+    def _fit_size(
+        self,
+        img: np.ndarray,
+        *,
+        width: int,
+        height: int,
+        height_ratio: float,
+    ) -> tuple[int, int]:
         source_height, source_width = img.shape[:2]
-        source_char_ratio = (source_height / max(1, source_width)) * self.CHAR_HEIGHT_RATIO
+        source_char_ratio = (source_height / max(1, source_width)) * height_ratio
         target_char_ratio = height / max(1, width)
 
         if source_char_ratio > target_char_ratio:
@@ -103,10 +162,17 @@ class ImageProcessor:
 
         return fit_width, fit_height
 
-    def _crop_to_fill(self, img: np.ndarray, *, width: int, height: int) -> np.ndarray:
+    def _crop_to_fill(
+        self,
+        img: np.ndarray,
+        *,
+        width: int,
+        height: int,
+        height_ratio: float,
+    ) -> np.ndarray:
         source_height, source_width = img.shape[:2]
         source_ratio = source_height / max(1, source_width)
-        target_ratio = height / max(1, width * self.CHAR_HEIGHT_RATIO)
+        target_ratio = height / max(1, width * height_ratio)
 
         if source_ratio > target_ratio:
             crop_height = max(1, min(source_height, int(round(source_width * target_ratio))))
@@ -117,9 +183,18 @@ class ImageProcessor:
         left = max(0, (source_width - crop_width) // 2)
         return img[:, left : left + crop_width, :]
 
-    def _resize_image(self, img: np.ndarray, width: int, height: int) -> np.ndarray:
+    def _resize_image(
+        self,
+        img: np.ndarray,
+        width: int,
+        height: int,
+        *,
+        prefer_pixel_art: bool = False,
+    ) -> np.ndarray:
         source_height, source_width = img.shape[:2]
-        if width >= source_width or height >= source_height:
+        if prefer_pixel_art and (width > source_width or height > source_height):
+            interpolation = cv2.INTER_NEAREST
+        elif width >= source_width or height >= source_height:
             interpolation = cv2.INTER_LINEAR
         else:
             interpolation = cv2.INTER_AREA
@@ -129,29 +204,58 @@ class ImageProcessor:
         """将图像数组转换为 ASCII 文本"""
         height, width, _ = img.shape
         result = Text()
-        
-        # 转换为灰度图用于选择字符
         gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        
-        # 字符集长度
         chars = charset if charset else self.SIMPLE_CHARS
         char_len = len(chars)
-        
+
         for y in range(height):
             for x in range(width):
-                # 获取像素颜色
                 r, g, b = img[y, x]
-                # 获取亮度
                 brightness = gray_img[y, x]
-                # 映射到字符
                 char_index = int((brightness / 255) * (char_len - 1))
                 char = chars[char_index]
-                
-                # 添加到 Text 对象
                 if color:
                     result.append(char, style=f"rgb({r},{g},{b})")
                 else:
                     result.append(char)
-            result.append("\n")
-            
+            if y < height - 1:
+                result.append("\n")
+
         return result
+
+    def _to_pixel(self, img: np.ndarray, *, color: bool = True) -> Text:
+        height, width, _ = img.shape
+        if height % 2:
+            img = np.concatenate([img, img[-1:, :, :]], axis=0)
+            height += 1
+
+        result = Text()
+        for y in range(0, height, 2):
+            for x in range(width):
+                top_r, top_g, top_b = img[y, x]
+                bottom_r, bottom_g, bottom_b = img[y + 1, x]
+                if color:
+                    result.append(
+                        "▀",
+                        style=(
+                            f"rgb({top_r},{top_g},{top_b}) "
+                            f"on rgb({bottom_r},{bottom_g},{bottom_b})"
+                        ),
+                    )
+                else:
+                    result.append("▀")
+            if y < height - 2:
+                result.append("\n")
+        return result
+
+    def _height_ratio_for_mode(self, render_mode: str) -> float:
+        if render_mode == "pixel":
+            return self.PIXEL_HEIGHT_RATIO
+        return self.ASCII_CHAR_HEIGHT_RATIO
+
+    def _normalize_sample_scale(self, sample_scale: float) -> float:
+        try:
+            value = float(sample_scale)
+        except (TypeError, ValueError):
+            value = 1.0
+        return max(0.5, min(value, 2.0))

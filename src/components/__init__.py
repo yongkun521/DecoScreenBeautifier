@@ -12,7 +12,9 @@ from .ticker import InfoTicker
 from core.layout_config import (
     DEFAULT_IMAGE_DISPLAY_MODE,
     DEFAULT_IMAGE_PATH,
+    DEFAULT_IMAGE_RENDER_MODE,
     normalize_image_display_mode,
+    normalize_image_render_mode,
 )
 
 COMPONENT_REGISTRY = {
@@ -40,13 +42,18 @@ def create_component_widget(
     if component_cls is ImageWidget:
         image_path = ""
         image_display_mode = DEFAULT_IMAGE_DISPLAY_MODE
+        image_render_mode = DEFAULT_IMAGE_RENDER_MODE
         if isinstance(component_config, dict):
             image_path = str(component_config.get("image_path") or "").strip()
             image_display_mode = normalize_image_display_mode(
                 component_config.get("image_display_mode")
             )
+            image_render_mode = normalize_image_render_mode(
+                component_config.get("image_render_mode")
+            )
         kwargs["image_path"] = image_path or DEFAULT_IMAGE_PATH
         kwargs["image_display_mode"] = image_display_mode
+        kwargs["image_render_mode"] = image_render_mode
     return component_cls(**kwargs)
 
 __all__ = [
