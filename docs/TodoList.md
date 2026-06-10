@@ -401,17 +401,28 @@
 - [x] 完成当前项目视觉/架构 review，结论：主线方案 A 成立，但现有观感仍受“平铺组件面板 + 文本内容”模型限制。
 - [x] 新增路线文档：`docs/视觉升级Review与路线图.md`
 - [x] 明确下一阶段核心方向：将“字符像素画布、位图处理、轮廓剪影、装饰图层”升级为一等能力，而不是单纯继续堆模板。
-- [ ] Textual UI V3：点阵图像管线增强
-  - [ ] `ImageProcessor` 拆出可扩展处理流水线与渲染选项对象。
-  - [ ] 新增 `silhouette / edge / duotone / dither / posterize` 等图片效果模式。
-  - [ ] 图片组件与编辑器接入 threshold、edge strength、invert、palette 等参数。
-  - [ ] 增加图片处理缓存，避免 resize/刷新时重复计算。
+- [~] Textual UI V3：点阵图像管线增强
+  - [x] `ImageProcessor` 拆出基础效果处理流水线，旧 `ascii / pixel` 调用保持兼容。
+  - [x] 新增 `silhouette / edge / duotone / dither / posterize` 等图片效果模式。
+  - [x] 图片组件与编辑器接入 threshold、edge strength、invert、palette 等参数。
+  - [x] 增加图片处理缓存，避免 resize/刷新时重复计算。
   - [ ] GIF 帧并入同一套图片渲染链。
-- [ ] Textual UI V3：图形/装饰组件
-  - [ ] 新增 `DotMatrixArtWidget`，用于用户图片、剪影、logo 的点阵化主视觉。
-  - [ ] 新增 `BackdropPatternWidget`，用于背景点阵、扫描线、低对比网格。
-  - [ ] 新增 `HudDecorWidget`，用于角标、准星、标尺、断裂线框等 HUD 装饰。
-- [ ] Textual UI V3：布局表现力升级
+- [x] Textual UI V3：图形/装饰组件（首版）
+  - [x] 新增 `DotMatrixArtWidget`，用于用户图片、剪影、logo 的点阵化主视觉。
+  - [x] 新增 `BackdropPatternWidget`，用于背景点阵、扫描线、低对比网格。
+  - [x] 新增 `HudDecorWidget`，用于角标、准星、标尺、断裂线框等 HUD 装饰。
+  - [x] 新增 `Silhouette Deck V3` 模板验证“点阵主视觉 + HUD 装饰”方向。
+- [~] Textual UI V3：布局表现力升级
   - [ ] 模板数据区分 `background / decoration / data` 组件用途。
-  - [ ] 评估短期“大跨度背景组件”方案。
+  - [x] 短期“大跨度背景组件”方案已用 `BackdropPatternWidget` 首版验证。
   - [ ] 评估中长期 `stage + layers` 或统一 cell buffer 合成器，以支持重叠、透明语义与视觉叠层。
+
+## 2026-06-10 Textual UI V3 阶段 1（点阵图片与图形组件）
+- [x] 提交 `97a9702 docs: add visual upgrade roadmap`：记录视觉升级 review 与路线。
+- [x] 提交 `2903b79 feat: add image effect rendering modes`：新增图片效果模式与处理器测试。
+- [x] 提交 `82bb6b9 feat: expose image effects in editor`：布局数据、图片组件和编辑器接入效果参数。
+- [x] 提交 `d71ce2b perf: cache processed image renders`：按文件/尺寸/效果参数缓存图片渲染结果。
+- [x] 提交 `9942218 feat: add dot matrix visual components`：新增 Dot Matrix Art / Backdrop Pattern / HUD Decor 与 `Silhouette Deck V3` 模板。
+- [x] 回归测试：
+  - [x] `venv\Scripts\python.exe -m py_compile src\components\dotart.py src\components\backdrop.py src\components\hud.py src\components\__init__.py src\core\layout_config.py src\core\presets.py src\ui\editor.py`
+  - [x] `venv\Scripts\python.exe -m unittest tests.test_image_processor tests.test_layout_config`
