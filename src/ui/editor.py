@@ -11,7 +11,11 @@ from textual.widgets import Button, Footer, Header, Input, Label, ListItem, List
 
 from config.manager import ConfigManager
 from core.layout_config import (
+    DEFAULT_IMAGE_EDGE_STRENGTH,
+    DEFAULT_IMAGE_EFFECT_MODE,
+    DEFAULT_IMAGE_EFFECT_THRESHOLD,
     DEFAULT_IMAGE_DISPLAY_MODE,
+    DEFAULT_IMAGE_INVERT,
     DEFAULT_IMAGE_RENDER_MODE,
     add_manual_empty_row,
     build_default_layout,
@@ -19,7 +23,11 @@ from core.layout_config import (
     default_span_for_component,
     grid_size_for_layout_class,
     layout_usage,
+    normalize_image_edge_strength,
+    normalize_image_effect_mode,
+    normalize_image_effect_threshold,
     normalize_image_display_mode,
+    normalize_image_invert,
     normalize_image_render_mode,
     remove_manual_empty_row,
     sanitize_layout_data,
@@ -91,6 +99,8 @@ class EditorScreen(Screen):
         "prop_col_span",
         "prop_row_span",
         "prop_image_path",
+        "prop_image_threshold",
+        "prop_image_edge_strength",
     }
 
     BINDINGS = [
@@ -183,6 +193,34 @@ class EditorScreen(Screen):
                         allow_blank=False,
                         id="prop_image_render_mode",
                     )
+                    yield Label("Image Effect (ImageWidget only)", classes="prop_section")
+                    yield Select(
+                        [
+                            ("None", "none"),
+                            ("Silhouette", "silhouette"),
+                            ("Edge", "edge"),
+                            ("Duotone", "duotone"),
+                            ("Dither", "dither"),
+                            ("Posterize", "posterize"),
+                        ],
+                        value=DEFAULT_IMAGE_EFFECT_MODE,
+                        allow_blank=False,
+                        id="prop_image_effect_mode",
+                    )
+                    yield Label("Threshold (0 = auto)", classes="prop_label")
+                    yield Input(placeholder="0 auto, 0-1 ratio, or 1-255", id="prop_image_threshold")
+                    yield Label("Edge Strength (0-1)", classes="prop_label")
+                    yield Input(placeholder="0.5", id="prop_image_edge_strength")
+                    yield Label("Invert Effect", classes="prop_label")
+                    yield Select(
+                        [
+                            ("Off", "false"),
+                            ("On", "true"),
+                        ],
+                        value="false",
+                        allow_blank=False,
+                        id="prop_image_invert",
+                    )
                     yield Label("Image Path (ImageWidget only)", classes="prop_section")
                     yield Input(placeholder="Leave blank to use built-in logo", id="prop_image_path")
                     with Horizontal(id="image_path_actions"):
@@ -255,7 +293,13 @@ class EditorScreen(Screen):
     async def on_select_changed(self, event: Select.Changed) -> None:
         if self._suppress_auto_apply:
             return
-        if event.select.id in {"prop_variant", "prop_image_mode", "prop_image_render_mode"}:
+        if event.select.id in {
+            "prop_variant",
+            "prop_image_mode",
+            "prop_image_render_mode",
+            "prop_image_effect_mode",
+            "prop_image_invert",
+        }:
             await self._auto_apply_component_changes(notify=False)
 
     def action_paste_from_system_clipboard(self) -> None:
@@ -447,6 +491,10 @@ class EditorScreen(Screen):
             self._set_select_value("#prop_variant", "")
             self._set_select_value("#prop_image_mode", DEFAULT_IMAGE_DISPLAY_MODE)
             self._set_select_value("#prop_image_render_mode", DEFAULT_IMAGE_RENDER_MODE)
+            self._set_select_value("#prop_image_effect_mode", DEFAULT_IMAGE_EFFECT_MODE)
+            self._set_input_value("#prop_image_threshold", str(DEFAULT_IMAGE_EFFECT_THRESHOLD))
+            self._set_input_value("#prop_image_edge_strength", str(DEFAULT_IMAGE_EDGE_STRENGTH))
+            self._set_select_value("#prop_image_invert", str(DEFAULT_IMAGE_INVERT).lower())
             self._set_input_value("#prop_image_path", "")
             return
         component = self._get_component(self.selected_component_id)
@@ -460,6 +508,10 @@ class EditorScreen(Screen):
             self._set_select_value("#prop_variant", "")
             self._set_select_value("#prop_image_mode", DEFAULT_IMAGE_DISPLAY_MODE)
             self._set_select_value("#prop_image_render_mode", DEFAULT_IMAGE_RENDER_MODE)
+            self._set_select_value("#prop_image_effect_mode", DEFAULT_IMAGE_EFFECT_MODE)
+            self._set_input_value("#prop_image_threshold", str(DEFAULT_IMAGE_EFFECT_THRESHOLD))
+            self._set_input_value("#prop_image_edge_strength", str(DEFAULT_IMAGE_EDGE_STRENGTH))
+            self._set_select_value("#prop_image_invert", str(DEFAULT_IMAGE_INVERT).lower())
             self._set_input_value("#prop_image_path", "")
             return
         self.query_one("#prop_selected", Static).update(
@@ -480,10 +532,30 @@ class EditorScreen(Screen):
                 "#prop_image_render_mode",
                 normalize_image_render_mode(component.get("image_render_mode")),
             )
+            self._set_select_value(
+                "#prop_image_effect_mode",
+                normalize_image_effect_mode(component.get("image_effect_mode")),
+            )
+            self._set_input_value(
+                "#prop_image_threshold",
+                str(normalize_image_effect_threshold(component.get("image_effect_threshold"))),
+            )
+            self._set_input_value(
+                "#prop_image_edge_strength",
+                str(normalize_image_edge_strength(component.get("image_edge_strength"))),
+            )
+            self._set_select_value(
+                "#prop_image_invert",
+                str(normalize_image_invert(component.get("image_invert"))).lower(),
+            )
             self._set_input_value("#prop_image_path", str(component.get("image_path") or ""))
         else:
             self._set_select_value("#prop_image_mode", DEFAULT_IMAGE_DISPLAY_MODE)
             self._set_select_value("#prop_image_render_mode", DEFAULT_IMAGE_RENDER_MODE)
+            self._set_select_value("#prop_image_effect_mode", DEFAULT_IMAGE_EFFECT_MODE)
+            self._set_input_value("#prop_image_threshold", str(DEFAULT_IMAGE_EFFECT_THRESHOLD))
+            self._set_input_value("#prop_image_edge_strength", str(DEFAULT_IMAGE_EDGE_STRENGTH))
+            self._set_select_value("#prop_image_invert", str(DEFAULT_IMAGE_INVERT).lower())
             self._set_input_value("#prop_image_path", "")
 
     def _set_selected_tool(self, item: Optional[ListItem]) -> None:
@@ -595,6 +667,10 @@ class EditorScreen(Screen):
             component["image_path"] = ""
             component["image_display_mode"] = DEFAULT_IMAGE_DISPLAY_MODE
             component["image_render_mode"] = DEFAULT_IMAGE_RENDER_MODE
+            component["image_effect_mode"] = DEFAULT_IMAGE_EFFECT_MODE
+            component["image_effect_threshold"] = DEFAULT_IMAGE_EFFECT_THRESHOLD
+            component["image_edge_strength"] = DEFAULT_IMAGE_EDGE_STRENGTH
+            component["image_invert"] = DEFAULT_IMAGE_INVERT
         return component
 
     async def _handle_browse_image(self) -> None:
@@ -680,6 +756,18 @@ class EditorScreen(Screen):
             )
             component["image_render_mode"] = normalize_image_render_mode(
                 self._get_select_value("#prop_image_render_mode")
+            )
+            component["image_effect_mode"] = normalize_image_effect_mode(
+                self._get_select_value("#prop_image_effect_mode")
+            )
+            component["image_effect_threshold"] = normalize_image_effect_threshold(
+                self._get_input_value("#prop_image_threshold")
+            )
+            component["image_edge_strength"] = normalize_image_edge_strength(
+                self._get_input_value("#prop_image_edge_strength")
+            )
+            component["image_invert"] = normalize_image_invert(
+                self._get_select_value("#prop_image_invert")
             )
             if image_path:
                 component["image_path"] = image_path
@@ -877,6 +965,8 @@ class EditorScreen(Screen):
         normalizers = {
             "#prop_image_mode": normalize_image_display_mode,
             "#prop_image_render_mode": normalize_image_render_mode,
+            "#prop_image_effect_mode": normalize_image_effect_mode,
+            "#prop_image_invert": lambda raw: "true" if normalize_image_invert(raw) else "false",
             "#prop_variant": lambda raw: str(raw or ""),
         }
         normalized_value = normalizers.get(selector, lambda raw: str(raw or ""))(value)

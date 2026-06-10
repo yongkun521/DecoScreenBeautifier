@@ -21,6 +21,10 @@ class LayoutConfigTest(unittest.TestCase):
         image_component = layout["components"][0]
         self.assertEqual(image_component["type"], "ImageWidget")
         self.assertEqual(image_component["image_render_mode"], "ascii")
+        self.assertEqual(image_component["image_effect_mode"], "none")
+        self.assertEqual(image_component["image_effect_threshold"], 0.0)
+        self.assertEqual(image_component["image_edge_strength"], 0.5)
+        self.assertFalse(image_component["image_invert"])
 
     def test_sanitize_layout_keeps_pixel_render_mode_and_backfills_old_layout(self) -> None:
         template = {"id": "test_template", "layout_class": "layout-wide"}
@@ -37,11 +41,19 @@ class LayoutConfigTest(unittest.TestCase):
                     "image_path": "assets/logo.png",
                     "image_display_mode": "fill",
                     "image_render_mode": "pixel",
+                    "image_effect_mode": "silhouette",
+                    "image_effect_threshold": 0.45,
+                    "image_edge_strength": 0.75,
+                    "image_invert": True,
                 }
             ],
         }
         modern_sanitized = sanitize_layout_data(modern_layout, template)
         self.assertEqual(modern_sanitized["components"][0]["image_render_mode"], "pixel")
+        self.assertEqual(modern_sanitized["components"][0]["image_effect_mode"], "silhouette")
+        self.assertEqual(modern_sanitized["components"][0]["image_effect_threshold"], 0.45)
+        self.assertEqual(modern_sanitized["components"][0]["image_edge_strength"], 0.75)
+        self.assertTrue(modern_sanitized["components"][0]["image_invert"])
 
         legacy_layout = {
             "template_id": "test_template",
@@ -59,6 +71,10 @@ class LayoutConfigTest(unittest.TestCase):
         }
         legacy_sanitized = sanitize_layout_data(legacy_layout, template)
         self.assertEqual(legacy_sanitized["components"][0]["image_render_mode"], "ascii")
+        self.assertEqual(legacy_sanitized["components"][0]["image_effect_mode"], "none")
+        self.assertEqual(legacy_sanitized["components"][0]["image_effect_threshold"], 0.0)
+        self.assertEqual(legacy_sanitized["components"][0]["image_edge_strength"], 0.5)
+        self.assertFalse(legacy_sanitized["components"][0]["image_invert"])
 
     def test_signal_lattice_template_defaults_to_pixel_hero_image(self) -> None:
         template = get_template("signal_lattice_max")
@@ -80,7 +96,15 @@ class LayoutConfigTest(unittest.TestCase):
                 "image_path": "assets/logo.png",
                 "image_display_mode": "fill",
                 "image_render_mode": "pixel",
+                "image_effect_mode": "edge",
+                "image_effect_threshold": 0.25,
+                "image_edge_strength": 0.9,
+                "image_invert": True,
             },
         )
         self.assertEqual(widget.image_display_mode, "fill")
         self.assertEqual(widget.image_render_mode, "pixel")
+        self.assertEqual(widget.image_effect_mode, "edge")
+        self.assertEqual(widget.image_effect_threshold, 0.25)
+        self.assertEqual(widget.image_edge_strength, 0.9)
+        self.assertTrue(widget.image_invert)

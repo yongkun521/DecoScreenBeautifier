@@ -7,8 +7,16 @@ from rich.text import Text
 
 from core.layout_config import (
     DEFAULT_IMAGE_DISPLAY_MODE,
+    DEFAULT_IMAGE_EDGE_STRENGTH,
+    DEFAULT_IMAGE_EFFECT_MODE,
+    DEFAULT_IMAGE_EFFECT_THRESHOLD,
+    DEFAULT_IMAGE_INVERT,
     DEFAULT_IMAGE_RENDER_MODE,
+    normalize_image_edge_strength,
+    normalize_image_effect_mode,
+    normalize_image_effect_threshold,
     normalize_image_display_mode,
+    normalize_image_invert,
     normalize_image_render_mode,
 )
 
@@ -38,12 +46,20 @@ class ImageWidget(BaseWidget):
         image_path: str = None,
         image_display_mode: str = DEFAULT_IMAGE_DISPLAY_MODE,
         image_render_mode: str = DEFAULT_IMAGE_RENDER_MODE,
+        image_effect_mode: str = DEFAULT_IMAGE_EFFECT_MODE,
+        image_effect_threshold: float = DEFAULT_IMAGE_EFFECT_THRESHOLD,
+        image_edge_strength: float = DEFAULT_IMAGE_EDGE_STRENGTH,
+        image_invert: bool = DEFAULT_IMAGE_INVERT,
         **kwargs,
     ):
         super().__init__(title="VISUAL", update_interval=0, **kwargs)
         self.image_path = image_path
         self.image_display_mode = normalize_image_display_mode(image_display_mode)
         self.image_render_mode = normalize_image_render_mode(image_render_mode)
+        self.image_effect_mode = normalize_image_effect_mode(image_effect_mode)
+        self.image_effect_threshold = normalize_image_effect_threshold(image_effect_threshold)
+        self.image_edge_strength = normalize_image_edge_strength(image_edge_strength)
+        self.image_invert = normalize_image_invert(image_invert)
         self.processor = ImageProcessor() if ImageProcessor is not None else None
         self.ascii_art = None
 
@@ -86,10 +102,18 @@ class ImageWidget(BaseWidget):
             charset=charset,
             display_mode=self.image_display_mode,
             render_mode=self.image_render_mode,
+            effect_mode=self.image_effect_mode,
+            palette=self._get_effect_palette(),
+            threshold=self._get_effect_threshold(),
+            edge_strength=self.image_edge_strength,
+            invert=self.image_invert,
             sample_scale=self._get_render_scale(),
         )
         if self.uses_light_chrome():
-            footer = f"{self.image_render_mode} | {self.image_display_mode}"
+            footer_parts = [self.image_render_mode, self.image_display_mode]
+            if self.image_effect_mode != "none":
+                footer_parts.append(self.image_effect_mode)
+            footer = " | ".join(footer_parts)
             self.update(self.compose_widget_content(self.ascii_art, footer=footer))
         else:
             self.update(Align.center(self.ascii_art, vertical="middle"))
@@ -104,6 +128,22 @@ class ImageWidget(BaseWidget):
         except (TypeError, ValueError):
             scale = 1.0
         return max(0.5, min(scale, 2.0))
+
+    def _get_effect_palette(self) -> dict[str, str]:
+        colors = {}
+        preset = self.get_style_preset()
+        if isinstance(preset, dict):
+            colors = preset.get("colors", {}) if isinstance(preset.get("colors"), dict) else {}
+        return {
+            "background": colors.get("background") or colors.get("surface") or "#000000",
+            "primary": colors.get("primary") or "#00FF41",
+            "accent": colors.get("accent") or colors.get("secondary") or "#FFD700",
+        }
+
+    def _get_effect_threshold(self) -> float | None:
+        if self.image_effect_threshold <= 0:
+            return None
+        return self.image_effect_threshold
 
     def _resolve_image_path(self, image_path: str | None) -> Path | None:
         raw_path = str(image_path or "").strip()

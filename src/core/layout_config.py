@@ -9,6 +9,9 @@ DEFAULT_IMAGE_PATH = "assets/logo.png"
 DEFAULT_IMAGE_DISPLAY_MODE = "fit"
 DEFAULT_IMAGE_RENDER_MODE = "ascii"
 DEFAULT_IMAGE_EFFECT_MODE = "none"
+DEFAULT_IMAGE_EFFECT_THRESHOLD = 0.0
+DEFAULT_IMAGE_EDGE_STRENGTH = 0.5
+DEFAULT_IMAGE_INVERT = False
 IMAGE_DISPLAY_MODES = ("fit", "fill", "stretch")
 IMAGE_RENDER_MODES = ("ascii", "pixel")
 IMAGE_EFFECT_MODES = ("none", "silhouette", "edge", "duotone", "dither", "posterize")
@@ -175,6 +178,29 @@ def normalize_image_effect_mode(value: object) -> str:
     return DEFAULT_IMAGE_EFFECT_MODE
 
 
+def normalize_image_effect_threshold(value: object) -> float:
+    try:
+        threshold = float(value)
+    except (TypeError, ValueError):
+        return DEFAULT_IMAGE_EFFECT_THRESHOLD
+    return max(0.0, min(255.0, threshold))
+
+
+def normalize_image_edge_strength(value: object) -> float:
+    try:
+        strength = float(value)
+    except (TypeError, ValueError):
+        return DEFAULT_IMAGE_EDGE_STRENGTH
+    return max(0.0, min(1.0, strength))
+
+
+def normalize_image_invert(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    text = str(value or "").strip().lower()
+    return text in {"1", "true", "yes", "on", "invert"}
+
+
 def grid_size_for_layout_class(layout_class: Optional[str]) -> Tuple[int, int]:
     return LAYOUT_GRID_SIZES.get(str(layout_class or ""), (6, 4))
 
@@ -199,6 +225,9 @@ def build_default_layout(template: Optional[dict]) -> Dict[str, object]:
     template_image_render_mode = normalize_image_render_mode(
         template.get("image_render_mode")
     )
+    template_image_effect_mode = normalize_image_effect_mode(
+        template.get("image_effect_mode")
+    )
 
     active_components = template.get("active_components")
     if not isinstance(active_components, list):
@@ -220,6 +249,10 @@ def build_default_layout(template: Optional[dict]) -> Dict[str, object]:
             component["image_path"] = DEFAULT_IMAGE_PATH
             component["image_display_mode"] = template_image_display_mode
             component["image_render_mode"] = template_image_render_mode
+            component["image_effect_mode"] = template_image_effect_mode
+            component["image_effect_threshold"] = DEFAULT_IMAGE_EFFECT_THRESHOLD
+            component["image_edge_strength"] = DEFAULT_IMAGE_EDGE_STRENGTH
+            component["image_invert"] = DEFAULT_IMAGE_INVERT
         components.append(component)
 
     _auto_place_components(components, cols, rows)
@@ -302,10 +335,26 @@ def sanitize_layout_data(layout_data: object, template: Optional[dict]) -> Dict[
             component["image_render_mode"] = normalize_image_render_mode(
                 component.get("image_render_mode")
             )
+            component["image_effect_mode"] = normalize_image_effect_mode(
+                component.get("image_effect_mode")
+            )
+            component["image_effect_threshold"] = normalize_image_effect_threshold(
+                component.get("image_effect_threshold")
+            )
+            component["image_edge_strength"] = normalize_image_edge_strength(
+                component.get("image_edge_strength")
+            )
+            component["image_invert"] = normalize_image_invert(
+                component.get("image_invert")
+            )
         else:
             component.pop("image_path", None)
             component.pop("image_display_mode", None)
             component.pop("image_render_mode", None)
+            component.pop("image_effect_mode", None)
+            component.pop("image_effect_threshold", None)
+            component.pop("image_edge_strength", None)
+            component.pop("image_invert", None)
 
         seen_ids.add(component_id)
         occupied |= cells_for_pos(*placed)
