@@ -3,7 +3,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageSequence
 from rich.text import Text
 
 from core.layout_config import (
@@ -31,6 +31,7 @@ class ImageProcessor:
     ASCII_CHAR_HEIGHT_RATIO = 0.5
     PIXEL_HEIGHT_RATIO = 1.0
     MAX_CACHE_ITEMS = 32
+    MAX_IMAGE_FRAMES = 120
 
     def __init__(self):
         self._render_cache = OrderedDict()
@@ -84,9 +85,8 @@ class ImageProcessor:
             if cached is not None:
                 return cached
 
-            pil_image = Image.open(image_path)
-            pil_image = pil_image.convert("RGB")
-            img = np.array(pil_image)
+            frames, _durations = self.load_image_frames(image_path, max_frames=1)
+            img = frames[0]
             result = self.process_array(
                 img,
                 width=width,
@@ -106,6 +106,33 @@ class ImageProcessor:
             return self._copy_text(result)
         except Exception as e:
             return Text(f"Image Error: {e}", style="red")
+
+    def load_image_frames(
+        self,
+        image_path: str,
+        *,
+        max_frames: int | None = None,
+    ) -> tuple[list[np.ndarray], list[int]]:
+        """
+        Load static or animated image frames as RGB arrays.
+
+        GIF and other animated formats use the same downstream render pipeline
+        as static images; this method only performs decoding and duration readout.
+        """
+        frame_limit = max(1, int(max_frames or self.MAX_IMAGE_FRAMES))
+        frames: list[np.ndarray] = []
+        durations: list[int] = []
+        with Image.open(image_path) as pil_image:
+            default_duration = int(pil_image.info.get("duration") or 100)
+            for frame in ImageSequence.Iterator(pil_image):
+                frames.append(np.array(frame.convert("RGB")))
+                durations.append(max(20, int(frame.info.get("duration") or default_duration)))
+                if len(frames) >= frame_limit:
+                    break
+
+        if not frames:
+            raise ValueError("No image frames decoded")
+        return frames, durations
 
     def process_array(
         self,

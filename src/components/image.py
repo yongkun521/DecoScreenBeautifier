@@ -41,6 +41,10 @@ class ImageWidget(BaseWidget):
     }
     """
 
+    MAX_MEDIA_FRAMES = 120
+    MIN_FRAME_SECONDS = 0.04
+    MAX_FRAME_SECONDS = 2.0
+
     def __init__(
         self,
         image_path: str = None,
@@ -62,10 +66,15 @@ class ImageWidget(BaseWidget):
         self.image_invert = normalize_image_invert(image_invert)
         self.processor = ImageProcessor() if ImageProcessor is not None else None
         self.ascii_art = None
+        self._media_frames = []
+        self._media_durations = []
+        self._media_source_key = None
+        self._frame_index = 0
+        self._animation_timer = None
+        self._rendered_frame_cache = {}
 
     def on_mount(self) -> None:
         super().on_mount()
-        self.load_image()
 
     def update_content(self) -> None:
         self.load_image()
@@ -83,10 +92,54 @@ class ImageWidget(BaseWidget):
 
         resolved_path = self._resolve_image_path(self.image_path)
         if resolved_path is None or not resolved_path.exists():
+            self._clear_media_state()
             error_color = self.get_style_color("danger", "red")
             self.update(
                 Align.center(Text("No Image Loaded", style=error_color), vertical="middle")
             )
+            return
+
+        if not self._ensure_media_frames(resolved_path):
+            return
+
+        self._render_current_frame()
+        self._sync_animation_timer()
+
+    def _ensure_media_frames(self, resolved_path: Path) -> bool:
+        source_key = self._media_source_key_for_path(resolved_path)
+        if source_key == self._media_source_key and self._media_frames:
+            return True
+
+        try:
+            frames, durations = self.processor.load_image_frames(
+                str(resolved_path),
+                max_frames=self.MAX_MEDIA_FRAMES,
+            )
+        except Exception as exc:
+            error_color = self.get_style_color("danger", "red")
+            self.update(
+                Align.center(Text(f"Image Error: {exc}", style=error_color), vertical="middle")
+            )
+            self._stop_animation_timer()
+            return False
+
+        self._media_source_key = source_key
+        self._media_frames = frames
+        self._media_durations = durations
+        self._frame_index = 0
+        self._rendered_frame_cache.clear()
+        return True
+
+    def _clear_media_state(self) -> None:
+        self._stop_animation_timer()
+        self._media_source_key = None
+        self._media_frames = []
+        self._media_durations = []
+        self._frame_index = 0
+        self._rendered_frame_cache.clear()
+
+    def _render_current_frame(self) -> None:
+        if not self._media_frames:
             return
 
         inner_width, inner_height = self.get_content_size(default=(40, 20))
@@ -94,25 +147,46 @@ class ImageWidget(BaseWidget):
         render_h = inner_height * 2 if self.image_render_mode == "pixel" else inner_height
         preset = self.get_visual_preset()
         charset = preset.get("image_chars") if preset else None
-
-        self.ascii_art = self.processor.process_image(
-            str(resolved_path),
+        palette = self._get_effect_palette()
+        render_scale = self._get_render_scale()
+        threshold = self._get_effect_threshold()
+        frame_index = min(self._frame_index, len(self._media_frames) - 1)
+        cache_key = self._render_cache_key(
+            frame_index=frame_index,
             width=render_w,
             height=render_h,
             charset=charset,
-            display_mode=self.image_display_mode,
-            render_mode=self.image_render_mode,
-            effect_mode=self.image_effect_mode,
-            palette=self._get_effect_palette(),
-            threshold=self._get_effect_threshold(),
-            edge_strength=self.image_edge_strength,
-            invert=self.image_invert,
-            sample_scale=self._get_render_scale(),
+            palette=palette,
+            threshold=threshold,
+            sample_scale=render_scale,
         )
+        cached = self._rendered_frame_cache.get(cache_key)
+        if cached is not None:
+            self.ascii_art = cached.copy()
+        else:
+            self.ascii_art = self.processor.process_array(
+                self._media_frames[frame_index],
+                width=render_w,
+                height=render_h,
+                charset=charset,
+                display_mode=self.image_display_mode,
+                render_mode=self.image_render_mode,
+                effect_mode=self.image_effect_mode,
+                palette=palette,
+                threshold=threshold,
+                edge_strength=self.image_edge_strength,
+                invert=self.image_invert,
+                sample_scale=render_scale,
+            )
+            self._rendered_frame_cache[cache_key] = self.ascii_art.copy()
+            self._trim_rendered_frame_cache()
+
         if self.uses_light_chrome():
             footer_parts = [self.image_render_mode, self.image_display_mode]
             if self.image_effect_mode != "none":
                 footer_parts.append(self.image_effect_mode)
+            if len(self._media_frames) > 1:
+                footer_parts.append(f"gif {frame_index + 1}/{len(self._media_frames)}")
             footer = " | ".join(footer_parts)
             self.update(self.compose_widget_content(self.ascii_art, footer=footer))
         else:
@@ -120,6 +194,44 @@ class ImageWidget(BaseWidget):
 
     def on_resize(self) -> None:
         self.load_image()
+
+    def on_unmount(self) -> None:
+        self._stop_animation_timer()
+
+    def _sync_animation_timer(self) -> None:
+        if len(self._media_frames) <= 1:
+            self._stop_animation_timer()
+            return
+        if self._animation_timer is not None:
+            return
+        self._schedule_next_frame()
+
+    def _schedule_next_frame(self) -> None:
+        if len(self._media_frames) <= 1 or not self.is_mounted:
+            self._animation_timer = None
+            return
+        duration_ms = 100
+        if self._media_durations:
+            duration_ms = self._media_durations[self._frame_index % len(self._media_durations)]
+        delay = max(self.MIN_FRAME_SECONDS, min(duration_ms / 1000.0, self.MAX_FRAME_SECONDS))
+        self._animation_timer = self.set_timer(delay, self._advance_frame)
+
+    def _advance_frame(self) -> None:
+        self._animation_timer = None
+        if len(self._media_frames) <= 1:
+            return
+        self._frame_index = (self._frame_index + 1) % len(self._media_frames)
+        self._render_current_frame()
+        self._schedule_next_frame()
+
+    def _stop_animation_timer(self) -> None:
+        if self._animation_timer is None:
+            return
+        try:
+            self._animation_timer.stop()
+        except Exception:
+            pass
+        self._animation_timer = None
 
     def _get_render_scale(self) -> float:
         scale = getattr(self.app, "global_scale", 1.0)
@@ -144,6 +256,47 @@ class ImageWidget(BaseWidget):
         if self.image_effect_threshold <= 0:
             return None
         return self.image_effect_threshold
+
+    def _media_source_key_for_path(self, path: Path) -> tuple:
+        try:
+            stat = path.stat()
+            return (str(path.resolve()), stat.st_mtime_ns, stat.st_size)
+        except OSError:
+            return (str(path), None, None)
+
+    def _render_cache_key(
+        self,
+        *,
+        frame_index: int,
+        width: int,
+        height: int,
+        charset: str | None,
+        palette: dict[str, str],
+        threshold: float | None,
+        sample_scale: float,
+    ) -> tuple:
+        return (
+            self._media_source_key,
+            frame_index,
+            int(width),
+            int(height),
+            charset or "",
+            self.image_display_mode,
+            self.image_render_mode,
+            self.image_effect_mode,
+            tuple(sorted(palette.items())),
+            threshold,
+            self.image_edge_strength,
+            self.image_invert,
+            sample_scale,
+        )
+
+    def _trim_rendered_frame_cache(self) -> None:
+        max_items = max(1, min(len(self._media_frames), self.MAX_MEDIA_FRAMES))
+        if len(self._rendered_frame_cache) <= max_items:
+            return
+        for key in list(self._rendered_frame_cache.keys())[: len(self._rendered_frame_cache) - max_items]:
+            self._rendered_frame_cache.pop(key, None)
 
     def _resolve_image_path(self, image_path: str | None) -> Path | None:
         raw_path = str(image_path or "").strip()

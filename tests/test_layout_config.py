@@ -1,4 +1,9 @@
 import unittest
+import tempfile
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
 
 from components import create_component_widget
 from core.layout_config import (
@@ -143,3 +148,30 @@ class LayoutConfigTest(unittest.TestCase):
         self.assertEqual(dot_art["image_display_mode"], "fill")
         self.assertEqual(dot_art["image_effect_mode"], "silhouette")
         self.assertEqual(dot_art["variant"], "variant-hero")
+
+    def test_image_widget_loads_gif_frames_for_shared_render_pipeline(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            image_path = Path(tmp_dir) / "anim.gif"
+            frame_a = Image.fromarray(np.zeros((4, 4, 3), dtype=np.uint8))
+            frame_b = Image.fromarray(np.full((4, 4, 3), 255, dtype=np.uint8))
+            frame_a.save(
+                image_path,
+                save_all=True,
+                append_images=[frame_b],
+                duration=[90, 130],
+                loop=0,
+            )
+
+            widget = create_component_widget(
+                "ImageWidget",
+                "p_image",
+                {
+                    "image_path": str(image_path),
+                    "image_render_mode": "pixel",
+                    "image_effect_mode": "duotone",
+                },
+            )
+
+            self.assertTrue(widget._ensure_media_frames(image_path))
+            self.assertEqual(len(widget._media_frames), 2)
+            self.assertEqual(len(widget._media_durations), 2)

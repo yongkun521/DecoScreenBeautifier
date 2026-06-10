@@ -163,3 +163,26 @@ class ImageProcessorTest(unittest.TestCase):
             self.assertEqual(first.plain, second.plain)
             self.assertIsNot(first, second)
             self.assertEqual(len(processor._render_cache), 1)
+
+    def test_load_image_frames_reads_animated_gif_frames(self) -> None:
+        processor = ImageProcessor()
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            image_path = Path(tmp_dir) / "anim.gif"
+            frame_a = Image.fromarray(np.zeros((4, 4, 3), dtype=np.uint8))
+            frame_b = Image.fromarray(np.full((4, 4, 3), 255, dtype=np.uint8))
+            frame_a.save(
+                image_path,
+                save_all=True,
+                append_images=[frame_b],
+                duration=[80, 120],
+                loop=0,
+            )
+
+            frames, durations = processor.load_image_frames(str(image_path))
+
+            self.assertEqual(len(frames), 2)
+            self.assertEqual(len(durations), 2)
+            self.assertEqual(frames[0].shape, (4, 4, 3))
+            self.assertEqual(frames[1].shape, (4, 4, 3))
+            self.assertGreaterEqual(durations[0], 20)
+            self.assertGreaterEqual(durations[1], 20)
