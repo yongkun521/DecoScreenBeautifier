@@ -21,9 +21,11 @@ from core.layout_config import (
     add_manual_empty_row,
     build_default_layout,
     cells_for_pos,
+    default_layer_for_component,
     default_span_for_component,
     grid_size_for_layout_class,
     layout_usage,
+    normalize_component_layer,
     normalize_image_edge_strength,
     normalize_image_effect_mode,
     normalize_image_effect_threshold,
@@ -88,6 +90,12 @@ VARIANT_OPTIONS = [
     ("Corner", "variant-corner"),
     ("Ribbon", "variant-ribbon"),
     ("Hero", "variant-hero"),
+]
+
+LAYER_OPTIONS = [
+    ("Background", "background"),
+    ("Decoration", "decoration"),
+    ("Data", "data"),
 ]
 
 
@@ -161,6 +169,13 @@ class EditorScreen(Screen):
                         yield Button("Add Row", variant="primary", id="btn_add_row")
                         yield Button("Remove Row", variant="warning", id="btn_remove_row")
                     yield Label("Position (0-based)", classes="prop_section")
+                    yield Label("Layer", classes="prop_label")
+                    yield Select(
+                        LAYER_OPTIONS,
+                        value="data",
+                        allow_blank=False,
+                        id="prop_layer",
+                    )
                     yield Label("Column", classes="prop_label")
                     yield Input(placeholder="Column", id="prop_col")
                     yield Label("Row", classes="prop_label")
@@ -299,6 +314,7 @@ class EditorScreen(Screen):
             return
         if event.select.id in {
             "prop_variant",
+            "prop_layer",
             "prop_image_mode",
             "prop_image_render_mode",
             "prop_image_effect_mode",
@@ -448,7 +464,8 @@ class EditorScreen(Screen):
         items = []
         for index, component in enumerate(self._components()):
             pos = component.get("pos", [0, 0, 1, 1])
-            label = f"{component.get('id')} ({component.get('type')}) [{pos[0]},{pos[1]}] {pos[2]}x{pos[3]}"
+            layer = normalize_component_layer(component.get("layer"), component.get("id"))
+            label = f"{component.get('id')} ({component.get('type')}) <{layer}> [{pos[0]},{pos[1]}] {pos[2]}x{pos[3]}"
             items.append(ListItem(Label(label), id=f"cmp_{component.get('id')}"))
             if component.get("id") == self.selected_component_id:
                 selected_index = index
@@ -492,6 +509,7 @@ class EditorScreen(Screen):
             self._set_input_value("#prop_row", "")
             self._set_input_value("#prop_col_span", "")
             self._set_input_value("#prop_row_span", "")
+            self._set_select_value("#prop_layer", "data")
             self._set_select_value("#prop_variant", "")
             self._set_select_value("#prop_image_mode", DEFAULT_IMAGE_DISPLAY_MODE)
             self._set_select_value("#prop_image_render_mode", DEFAULT_IMAGE_RENDER_MODE)
@@ -509,6 +527,7 @@ class EditorScreen(Screen):
             self._set_input_value("#prop_row", "")
             self._set_input_value("#prop_col_span", "")
             self._set_input_value("#prop_row_span", "")
+            self._set_select_value("#prop_layer", "data")
             self._set_select_value("#prop_variant", "")
             self._set_select_value("#prop_image_mode", DEFAULT_IMAGE_DISPLAY_MODE)
             self._set_select_value("#prop_image_render_mode", DEFAULT_IMAGE_RENDER_MODE)
@@ -526,6 +545,10 @@ class EditorScreen(Screen):
         self._set_input_value("#prop_row", str(row))
         self._set_input_value("#prop_col_span", str(col_span))
         self._set_input_value("#prop_row_span", str(row_span))
+        self._set_select_value(
+            "#prop_layer",
+            normalize_component_layer(component.get("layer"), component.get("id")),
+        )
         self._set_select_value("#prop_variant", str(component.get("variant") or ""))
         if self._is_image_component_type(component.get("type")):
             self._set_select_value(
@@ -653,7 +676,8 @@ class EditorScreen(Screen):
         component_id = self._unique_component_id(base_id)
         layout_class = self.layout_data.get("layout_class")
         col_span, row_span = self._resolve_span(layout_class, tool)
-        placement = self._find_slot(col_span, row_span)
+        component_layer = default_layer_for_component(base_id)
+        placement = self._find_slot(col_span, row_span, layer=component_layer)
         if placement is None:
             used, total, free = layout_usage(self.layout_data)
             self.notify(
@@ -665,6 +689,7 @@ class EditorScreen(Screen):
             "id": component_id,
             "type": tool.type_name,
             "variant": tool.variant,
+            "layer": component_layer,
             "pos": [col, row, col_span, row_span],
         }
         if self._is_image_component_type(tool.type_name):
@@ -737,17 +762,23 @@ class EditorScreen(Screen):
             if notify:
                 self.notify("Please enter valid numeric values before saving.")
             return False
+        selected_layer = normalize_component_layer(
+            self._get_select_value("#prop_layer"),
+            self.selected_component_id,
+        )
         if not self._validate_position(
             self.selected_component_id,
             col,
             row,
             col_span,
             row_span,
+            layer=selected_layer,
             notify=notify,
         ):
             return False
 
         component["pos"] = [col, row, col_span, row_span]
+        component["layer"] = selected_layer
         selected_variant = self._get_select_value("#prop_variant")
         if selected_variant:
             component["variant"] = selected_variant
@@ -831,6 +862,7 @@ class EditorScreen(Screen):
         col_span: int,
         row_span: int,
         *,
+        layer: str,
         notify: bool,
     ) -> bool:
         cols, rows = self._grid_size()
@@ -844,27 +876,42 @@ class EditorScreen(Screen):
             if notify:
                 self.notify("Component exceeds grid bounds.")
             return False
-        if self._position_conflicts(component_id, col, row, col_span, row_span):
-            self._set_status_message("Component overlaps another component.", level="warning")
+        if self._position_conflicts(component_id, col, row, col_span, row_span, layer=layer):
+            self._set_status_message("Component overlaps another component on the same layer.", level="warning")
             if notify:
-                self.notify("Component overlaps another component.")
+                self.notify("Component overlaps another component on the same layer.")
             return False
         return True
 
-    def _position_conflicts(self, component_id: str, col: int, row: int, col_span: int, row_span: int) -> bool:
+    def _position_conflicts(
+        self,
+        component_id: str,
+        col: int,
+        row: int,
+        col_span: int,
+        row_span: int,
+        *,
+        layer: str,
+    ) -> bool:
         occupied = set()
         for component in self._components():
             if component.get("id") == component_id:
+                continue
+            component_layer = normalize_component_layer(component.get("layer"), component.get("id"))
+            if component_layer != layer:
                 continue
             pos = component.get("pos", [0, 0, 1, 1])
             occupied |= self._cells_for_pos(pos[0], pos[1], pos[2], pos[3])
         new_cells = self._cells_for_pos(col, row, col_span, row_span)
         return not occupied.isdisjoint(new_cells)
 
-    def _find_slot(self, col_span: int, row_span: int) -> Optional[Tuple[int, int]]:
+    def _find_slot(self, col_span: int, row_span: int, *, layer: str) -> Optional[Tuple[int, int]]:
         cols, rows = self._grid_size()
         occupied = set()
         for component in self._components():
+            component_layer = normalize_component_layer(component.get("layer"), component.get("id"))
+            if component_layer != layer:
+                continue
             pos = component.get("pos", [0, 0, 1, 1])
             occupied |= self._cells_for_pos(pos[0], pos[1], pos[2], pos[3])
         for row in range(rows):
@@ -971,6 +1018,7 @@ class EditorScreen(Screen):
             "#prop_image_render_mode": normalize_image_render_mode,
             "#prop_image_effect_mode": normalize_image_effect_mode,
             "#prop_image_invert": lambda raw: "true" if normalize_image_invert(raw) else "false",
+            "#prop_layer": lambda raw: normalize_component_layer(raw),
             "#prop_variant": lambda raw: str(raw or ""),
         }
         normalized_value = normalizers.get(selector, lambda raw: str(raw or ""))(value)
