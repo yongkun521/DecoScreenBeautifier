@@ -1,7 +1,10 @@
 import math
+import tempfile
 import unittest
+from pathlib import Path
 
 import numpy as np
+from PIL import Image
 
 from processors.image import ImageProcessor
 
@@ -135,3 +138,28 @@ class ImageProcessorTest(unittest.TestCase):
 
         chars = set(result.plain.replace("\n", ""))
         self.assertEqual(chars, {"@", " "})
+
+    def test_process_image_uses_cache_for_repeated_file_render(self) -> None:
+        processor = ImageProcessor()
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            image_path = Path(tmp_dir) / "sample.png"
+            Image.fromarray(_make_test_image(height=6, width=8)).save(image_path)
+
+            first = processor.process_image(
+                str(image_path),
+                width=6,
+                height=4,
+                render_mode="ascii",
+                effect_mode="duotone",
+            )
+            second = processor.process_image(
+                str(image_path),
+                width=6,
+                height=4,
+                render_mode="ascii",
+                effect_mode="duotone",
+            )
+
+            self.assertEqual(first.plain, second.plain)
+            self.assertIsNot(first, second)
+            self.assertEqual(len(processor._render_cache), 1)

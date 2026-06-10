@@ -1,3 +1,6 @@
+from collections import OrderedDict
+from pathlib import Path
+
 import cv2
 import numpy as np
 from PIL import Image
@@ -27,6 +30,10 @@ class ImageProcessor:
 
     ASCII_CHAR_HEIGHT_RATIO = 0.5
     PIXEL_HEIGHT_RATIO = 1.0
+    MAX_CACHE_ITEMS = 32
+
+    def __init__(self):
+        self._render_cache = OrderedDict()
 
     def process_image(
         self,
@@ -58,10 +65,29 @@ class ImageProcessor:
         :return: Rich Text 对象
         """
         try:
+            cache_key = self._make_file_cache_key(
+                image_path=image_path,
+                width=width,
+                height=height,
+                color=color,
+                charset=charset,
+                display_mode=display_mode,
+                render_mode=render_mode,
+                effect_mode=effect_mode,
+                palette=palette,
+                threshold=threshold,
+                edge_strength=edge_strength,
+                invert=invert,
+                sample_scale=sample_scale,
+            )
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
             pil_image = Image.open(image_path)
             pil_image = pil_image.convert("RGB")
             img = np.array(pil_image)
-            return self.process_array(
+            result = self.process_array(
                 img,
                 width=width,
                 height=height,
@@ -76,6 +102,8 @@ class ImageProcessor:
                 invert=invert,
                 sample_scale=sample_scale,
             )
+            self._cache_set(cache_key, result)
+            return self._copy_text(result)
         except Exception as e:
             return Text(f"Image Error: {e}", style="red")
 
@@ -521,3 +549,71 @@ class ImageProcessor:
         except (TypeError, ValueError):
             value = 1.0
         return max(0.5, min(value, 2.0))
+
+    def _make_file_cache_key(
+        self,
+        *,
+        image_path: str,
+        width: int,
+        height: int | None,
+        color: bool,
+        charset: str | None,
+        display_mode: str,
+        render_mode: str,
+        effect_mode: str,
+        palette: object,
+        threshold: float | None,
+        edge_strength: float,
+        invert: bool,
+        sample_scale: float,
+    ) -> tuple:
+        path = Path(str(image_path)).expanduser()
+        try:
+            stat = path.stat()
+            file_identity = (str(path.resolve()), stat.st_mtime_ns, stat.st_size)
+        except OSError:
+            file_identity = (str(path), None, None)
+        return (
+            file_identity,
+            int(width),
+            None if height is None else int(height),
+            bool(color),
+            charset or "",
+            normalize_image_display_mode(display_mode),
+            normalize_image_render_mode(render_mode),
+            normalize_image_effect_mode(effect_mode),
+            self._freeze_for_cache(palette),
+            None if threshold is None else float(threshold),
+            float(edge_strength),
+            bool(invert),
+            self._normalize_sample_scale(sample_scale),
+        )
+
+    def _cache_get(self, key: tuple) -> Text | None:
+        cached = self._render_cache.get(key)
+        if cached is None:
+            return None
+        self._render_cache.move_to_end(key)
+        return self._copy_text(cached)
+
+    def _cache_set(self, key: tuple, value: Text) -> None:
+        self._render_cache[key] = self._copy_text(value)
+        self._render_cache.move_to_end(key)
+        while len(self._render_cache) > self.MAX_CACHE_ITEMS:
+            self._render_cache.popitem(last=False)
+
+    def _copy_text(self, text: Text) -> Text:
+        try:
+            return text.copy()
+        except Exception:
+            return Text(text.plain, style=text.style)
+
+    def _freeze_for_cache(self, value: object) -> object:
+        if isinstance(value, dict):
+            return tuple(
+                (str(key), self._freeze_for_cache(item))
+                for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+            )
+        if isinstance(value, (list, tuple)):
+            return tuple(self._freeze_for_cache(item) for item in value)
+        return value
