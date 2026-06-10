@@ -15,10 +15,16 @@ DEFAULT_IMAGE_INVERT = False
 IMAGE_DISPLAY_MODES = ("fit", "fill", "stretch")
 IMAGE_RENDER_MODES = ("ascii", "pixel")
 IMAGE_EFFECT_MODES = ("none", "silhouette", "edge", "duotone", "dither", "posterize")
+LAYOUT_LAYERS = ("background", "decoration", "data")
+DEFAULT_COMPONENT_LAYER = "data"
 DEFAULT_MANUAL_ROWS = 0
 
 DEFAULT_ACTIVE_COMPONENTS = ["p_hardware", "p_network", "p_clock", "p_audio", "p_image"]
 IMAGE_COMPONENT_TYPES = {"ImageWidget", "DotMatrixArtWidget"}
+DEFAULT_COMPONENT_LAYERS: Dict[str, str] = {
+    "p_backdrop": "background",
+    "p_hud": "decoration",
+}
 
 BASE_COMPONENTS: Dict[str, str] = {
     "p_hardware": "HardwareMonitor",
@@ -191,6 +197,18 @@ def canonical_component_base_id(component_id: object) -> Optional[str]:
     return None
 
 
+def default_layer_for_component(component_id: object) -> str:
+    base_id = canonical_component_base_id(component_id) or str(component_id or "")
+    return DEFAULT_COMPONENT_LAYERS.get(base_id, DEFAULT_COMPONENT_LAYER)
+
+
+def normalize_component_layer(value: object, component_id: object = None) -> str:
+    layer = str(value or "").strip().lower()
+    if layer in LAYOUT_LAYERS:
+        return layer
+    return default_layer_for_component(component_id)
+
+
 def normalize_image_display_mode(value: object) -> str:
     mode = str(value or "").strip().lower()
     if mode in IMAGE_DISPLAY_MODES:
@@ -253,6 +271,9 @@ def build_default_layout(template: Optional[dict]) -> Dict[str, object]:
     variant_map = template.get("component_variants", {})
     if not isinstance(variant_map, dict):
         variant_map = {}
+    layer_map = template.get("component_layers", {})
+    if not isinstance(layer_map, dict):
+        layer_map = {}
     template_image_display_mode = normalize_image_display_mode(
         template.get("image_display_mode")
     )
@@ -277,6 +298,7 @@ def build_default_layout(template: Optional[dict]) -> Dict[str, object]:
             "id": str(base_id),
             "type": type_name,
             "variant": variant_map.get(str(base_id)),
+            "layer": normalize_component_layer(layer_map.get(str(base_id)), str(base_id)),
             "pos": [0, 0, col_span, row_span],
         }
         if type_name in IMAGE_COMPONENT_TYPES:
@@ -326,7 +348,7 @@ def sanitize_layout_data(layout_data: object, template: Optional[dict]) -> Dict[
     if not isinstance(raw_components, list):
         raw_components = []
 
-    occupied = set()
+    occupied_by_layer: dict[str, set[tuple[int, int]]] = {}
     seen_ids: set[str] = set()
     clean_components: List[Dict[str, object]] = []
     for raw_component in raw_components:
@@ -355,6 +377,9 @@ def sanitize_layout_data(layout_data: object, template: Optional[dict]) -> Dict[
         col_span = max(1, min(cols - col, _safe_int(pos[2], 1)))
         row_span = max(1, min(rows - row, _safe_int(pos[3], 1)))
 
+        component["layer"] = normalize_component_layer(component.get("layer"), component_id)
+        layer = str(component["layer"])
+        occupied = occupied_by_layer.setdefault(layer, set())
         placed = _place_or_find_slot(occupied, cols, rows, col, row, col_span, row_span)
         if placed is None:
             continue
@@ -540,8 +565,11 @@ def remove_manual_empty_row(layout_data: object) -> Dict[str, object]:
 
 
 def _auto_place_components(components: List[Dict[str, object]], cols: int, rows: int) -> None:
-    occupied = set()
+    occupied_by_layer: dict[str, set[tuple[int, int]]] = {}
     for component in components:
+        layer = normalize_component_layer(component.get("layer"), component.get("id"))
+        component["layer"] = layer
+        occupied = occupied_by_layer.setdefault(layer, set())
         pos = component.get("pos", [0, 0, 1, 1])
         if not isinstance(pos, list):
             pos = [0, 0, 1, 1]

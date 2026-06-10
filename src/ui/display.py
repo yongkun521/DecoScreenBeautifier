@@ -5,16 +5,18 @@ from typing import Optional
 from textual import events
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Grid
+from textual.containers import Container, Grid
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
 
 from components import create_component_widget
 from components.base import BaseWidget
 from core.layout_config import (
+    LAYOUT_LAYERS,
     build_default_layout,
     canonical_component_base_id,
     cells_for_pos,
+    normalize_component_layer,
     sanitize_layout_data,
 )
 
@@ -63,7 +65,10 @@ class DisplayScreen(Screen):
     def compose(self) -> ComposeResult:
         _trace_startup("display.compose: enter")
         yield Header(show_clock=True, id="app_header")
-        yield Grid(id="main_grid")
+        with Container(id="display_stage"):
+            yield Grid(id="background_grid", classes="display-layer-grid")
+            yield Grid(id="decoration_grid", classes="display-layer-grid")
+            yield Grid(id="main_grid", classes="display-layer-grid")
         yield Footer(id="app_footer")
 
     async def on_mount(self) -> None:
@@ -150,18 +155,25 @@ class DisplayScreen(Screen):
         self._active_template_classes = new_classes
 
     async def _mount_layout_widgets(self, layout_data: dict) -> None:
-        grid = self.query_one("#main_grid", Grid)
-        widgets = self._build_layout_widgets(layout_data)
-        async with grid.batch():
-            await grid.remove_children("*")
-            if widgets:
-                await grid.mount_all(widgets)
+        layer_components = self._components_by_layer(layout_data)
+        total_components = sum(len(components) for components in layer_components.values())
+        for layer_name, grid_id in self._layer_grid_ids().items():
+            grid = self.query_one(f"#{grid_id}", Grid)
+            widgets = self._build_layout_widgets(
+                layout_data,
+                layer_components.get(layer_name, []),
+                show_boot_hint=(layer_name == "data" and total_components == 0),
+            )
+            async with grid.batch():
+                await grid.remove_children("*")
+                if widgets:
+                    await grid.mount_all(widgets)
 
         _trace_startup("display.layout_widgets: " + ",".join(self._built_widget_ids))
 
     def _apply_grid_styles(self, layout_data: dict) -> None:
         try:
-            grid = self.query_one("#main_grid", Grid)
+            grids = [self.query_one(f"#{grid_id}", Grid) for grid_id in self._layer_grid_ids().values()]
         except Exception:
             return
 
@@ -171,19 +183,22 @@ class DisplayScreen(Screen):
         cols = max(1, int(grid_size.get("cols", 1)))
         rows = max(1, int(grid_size.get("rows", 1)))
 
-        grid.styles.grid_size_columns = cols
-        grid.styles.grid_size_rows = rows
-        grid.styles.grid_columns = " ".join(["1fr"] * cols)
-        grid.styles.grid_rows = " ".join(["1fr"] * rows)
+        for grid in grids:
+            grid.styles.grid_size_columns = cols
+            grid.styles.grid_size_rows = rows
+            grid.styles.grid_columns = " ".join(["1fr"] * cols)
+            grid.styles.grid_rows = " ".join(["1fr"] * rows)
 
-    def _build_layout_widgets(self, layout_data: dict) -> list[Static]:
-        self._built_widget_ids = []
+    def _build_layout_widgets(
+        self,
+        layout_data: dict,
+        components: list[dict],
+        *,
+        show_boot_hint: bool = False,
+    ) -> list[Static]:
         grid_size = layout_data.get("grid_size", {})
         cols = max(1, int(grid_size.get("cols", 1)))
         rows = max(1, int(grid_size.get("rows", 1)))
-        components = layout_data.get("components", [])
-        if not isinstance(components, list):
-            components = []
 
         start_map: dict[tuple[int, int], dict] = {}
         occupied = set()
@@ -206,10 +221,12 @@ class DisplayScreen(Screen):
             start_map[(col, row)] = component
             occupied |= covered
 
-        if not start_map:
+        if not start_map and show_boot_hint:
             boot_hint = Static("[DecoScreen] No widgets enabled for current layout.", id="p_boot_hint")
             boot_hint.styles.column_span = cols
             return [boot_hint]
+        if not start_map:
+            return []
 
         rendered: list[Static] = []
         covered_cells = set()
@@ -261,6 +278,26 @@ class DisplayScreen(Screen):
 
         self._built_widget_ids.append(component_id)
         return widget
+
+    def _components_by_layer(self, layout_data: dict) -> dict[str, list[dict]]:
+        self._built_widget_ids = []
+        result = {layer: [] for layer in LAYOUT_LAYERS}
+        components = layout_data.get("components", [])
+        if not isinstance(components, list):
+            return result
+        for component in components:
+            if not isinstance(component, dict):
+                continue
+            layer = normalize_component_layer(component.get("layer"), component.get("id"))
+            result.setdefault(layer, []).append(component)
+        return result
+
+    def _layer_grid_ids(self) -> dict[str, str]:
+        return {
+            "background": "background_grid",
+            "decoration": "decoration_grid",
+            "data": "main_grid",
+        }
 
     def _apply_visual_preset(self) -> None:
         for widget in self.query(BaseWidget):

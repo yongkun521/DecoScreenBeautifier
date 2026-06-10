@@ -247,18 +247,40 @@ Screen.theme-redline-2077 .component-stream {
     border: solid #FF6678;
 }
 
-/* 主网格布局 */
-#main_grid {
+/* 主显示舞台与分层网格 */
+#display_stage {
+    height: 1fr;
+    width: 100%;
+    layers: background decoration data;
+}
+
+.display-layer-grid {
     layout: grid;
     grid-size: 6 4;
     grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
     grid-rows: 1fr 1fr 1fr 1fr;
     grid-gutter: 1;       /* 间距 */
     padding: 1;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    offset: 0 0;
 }
 
-Screen.theme-signal-lattice #main_grid,
-Screen.theme-deck-strip #main_grid {
+#background_grid {
+    layer: background;
+}
+
+#decoration_grid {
+    layer: decoration;
+}
+
+#main_grid {
+    layer: data;
+}
+
+Screen.theme-signal-lattice .display-layer-grid,
+Screen.theme-deck-strip .display-layer-grid {
     grid-gutter: 0;
     padding: 0 1;
 }

@@ -8,6 +8,7 @@ from PIL import Image
 from components import create_component_widget
 from core.layout_config import (
     build_default_layout,
+    cells_for_pos,
     sanitize_layout_data,
 )
 from core.presets import get_template
@@ -148,6 +149,19 @@ class LayoutConfigTest(unittest.TestCase):
         self.assertEqual(dot_art["image_display_mode"], "fill")
         self.assertEqual(dot_art["image_effect_mode"], "silhouette")
         self.assertEqual(dot_art["variant"], "variant-hero")
+        self.assertEqual(dot_art["layer"], "data")
+
+        backdrop = next(
+            component for component in layout["components"] if component["type"] == "BackdropPatternWidget"
+        )
+        hud = next(
+            component for component in layout["components"] if component["type"] == "HudDecorWidget"
+        )
+        self.assertEqual(backdrop["layer"], "background")
+        self.assertEqual(hud["layer"], "decoration")
+        self.assertFalse(
+            cells_for_pos(*backdrop["pos"]).isdisjoint(cells_for_pos(*dot_art["pos"]))
+        )
 
     def test_image_widget_loads_gif_frames_for_shared_render_pipeline(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -175,3 +189,61 @@ class LayoutConfigTest(unittest.TestCase):
             self.assertTrue(widget._ensure_media_frames(image_path))
             self.assertEqual(len(widget._media_frames), 2)
             self.assertEqual(len(widget._media_durations), 2)
+
+    def test_sanitize_layout_allows_overlap_across_layers(self) -> None:
+        template = {"id": "layered", "layout_class": "layout-wide"}
+        layout = {
+            "template_id": "layered",
+            "layout_class": "layout-wide",
+            "grid_size": {"cols": 8, "rows": 4},
+            "components": [
+                {
+                    "id": "p_backdrop",
+                    "type": "BackdropPatternWidget",
+                    "layer": "background",
+                    "pos": [0, 0, 8, 1],
+                },
+                {
+                    "id": "p_image",
+                    "type": "ImageWidget",
+                    "layer": "data",
+                    "pos": [0, 0, 4, 1],
+                },
+            ],
+        }
+
+        sanitized = sanitize_layout_data(layout, template)
+        components = {component["id"]: component for component in sanitized["components"]}
+
+        self.assertEqual(components["p_backdrop"]["pos"], [0, 0, 8, 1])
+        self.assertEqual(components["p_image"]["pos"], [0, 0, 4, 1])
+        self.assertEqual(components["p_backdrop"]["layer"], "background")
+        self.assertEqual(components["p_image"]["layer"], "data")
+
+    def test_sanitize_layout_still_moves_same_layer_overlap(self) -> None:
+        template = {"id": "layered", "layout_class": "layout-wide"}
+        layout = {
+            "template_id": "layered",
+            "layout_class": "layout-wide",
+            "grid_size": {"cols": 8, "rows": 4},
+            "components": [
+                {
+                    "id": "p_hardware",
+                    "type": "HardwareMonitor",
+                    "layer": "data",
+                    "pos": [0, 0, 4, 1],
+                },
+                {
+                    "id": "p_network",
+                    "type": "NetworkMonitor",
+                    "layer": "data",
+                    "pos": [0, 0, 4, 1],
+                },
+            ],
+        }
+
+        sanitized = sanitize_layout_data(layout, template)
+        components = {component["id"]: component for component in sanitized["components"]}
+
+        self.assertEqual(components["p_hardware"]["pos"], [0, 0, 4, 1])
+        self.assertNotEqual(components["p_network"]["pos"], [0, 0, 4, 1])
