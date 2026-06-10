@@ -8,8 +8,10 @@ from core.presets import DEFAULT_TEMPLATE_ID
 DEFAULT_IMAGE_PATH = "assets/logo.png"
 DEFAULT_IMAGE_DISPLAY_MODE = "fit"
 DEFAULT_IMAGE_RENDER_MODE = "ascii"
+DEFAULT_IMAGE_EFFECT_MODE = "none"
 IMAGE_DISPLAY_MODES = ("fit", "fill", "stretch")
 IMAGE_RENDER_MODES = ("ascii", "pixel")
+IMAGE_EFFECT_MODES = ("none", "silhouette", "edge", "duotone", "dither", "posterize")
 DEFAULT_MANUAL_ROWS = 0
 
 DEFAULT_ACTIVE_COMPONENTS = ["p_hardware", "p_network", "p_clock", "p_audio", "p_image"]
@@ -164,6 +166,13 @@ def normalize_image_render_mode(value: object) -> str:
     if mode in IMAGE_RENDER_MODES:
         return mode
     return DEFAULT_IMAGE_RENDER_MODE
+
+
+def normalize_image_effect_mode(value: object) -> str:
+    mode = str(value or "").strip().lower()
+    if mode in IMAGE_EFFECT_MODES:
+        return mode
+    return DEFAULT_IMAGE_EFFECT_MODE
 
 
 def grid_size_for_layout_class(layout_class: Optional[str]) -> Tuple[int, int]:

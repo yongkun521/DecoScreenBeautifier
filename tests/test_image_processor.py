@@ -75,3 +75,63 @@ class ImageProcessorTest(unittest.TestCase):
                 if display_mode == "stretch":
                     self.assertEqual(len(lines), 4)
                     self.assertTrue(all(len(line) == 9 for line in lines))
+
+    def test_effect_modes_keep_ascii_output_footprint(self) -> None:
+        processor = ImageProcessor()
+
+        for effect_mode in ("silhouette", "edge", "duotone", "dither", "posterize"):
+            result = processor.process_array(
+                _make_test_image(height=12, width=18),
+                width=10,
+                height=5,
+                render_mode="ascii",
+                display_mode="stretch",
+                effect_mode=effect_mode,
+                threshold=0.45,
+                edge_strength=0.75,
+                palette={"background": "#000000", "accent": "#FFFFFF"},
+            )
+            lines = result.plain.splitlines()
+            self.assertEqual(len(lines), 5, effect_mode)
+            self.assertTrue(all(len(line) == 10 for line in lines), effect_mode)
+
+    def test_effect_modes_keep_pixel_output_footprint(self) -> None:
+        processor = ImageProcessor()
+
+        for effect_mode in ("silhouette", "edge", "duotone", "dither", "posterize"):
+            result = processor.process_array(
+                _make_test_image(height=12, width=18),
+                width=8,
+                height=6,
+                render_mode="pixel",
+                display_mode="stretch",
+                effect_mode=effect_mode,
+                threshold=128,
+                edge_strength=0.25,
+                palette=("#010101", "#00ff41"),
+            )
+            lines = result.plain.splitlines()
+            self.assertEqual(len(lines), 3, effect_mode)
+            self.assertTrue(all(len(line) == 8 for line in lines), effect_mode)
+
+    def test_silhouette_threshold_creates_binary_ascii_art(self) -> None:
+        processor = ImageProcessor()
+        img = np.zeros((4, 4, 3), dtype=np.uint8)
+        img[:, :2] = [0, 0, 0]
+        img[:, 2:] = [255, 255, 255]
+
+        result = processor.process_array(
+            img,
+            width=4,
+            height=4,
+            color=False,
+            charset="@ ",
+            render_mode="ascii",
+            display_mode="stretch",
+            effect_mode="silhouette",
+            threshold=0.5,
+            palette={"background": "#000000", "accent": "#FFFFFF"},
+        )
+
+        chars = set(result.plain.replace("\n", ""))
+        self.assertEqual(chars, {"@", " "})

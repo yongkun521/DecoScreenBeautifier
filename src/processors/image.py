@@ -5,7 +5,9 @@ from rich.text import Text
 
 from core.layout_config import (
     DEFAULT_IMAGE_DISPLAY_MODE,
+    DEFAULT_IMAGE_EFFECT_MODE,
     DEFAULT_IMAGE_RENDER_MODE,
+    normalize_image_effect_mode,
     normalize_image_display_mode,
     normalize_image_render_mode,
 )
@@ -35,6 +37,11 @@ class ImageProcessor:
         charset: str = None,
         display_mode: str = DEFAULT_IMAGE_DISPLAY_MODE,
         render_mode: str = DEFAULT_IMAGE_RENDER_MODE,
+        effect_mode: str = DEFAULT_IMAGE_EFFECT_MODE,
+        palette: object = None,
+        threshold: float | None = None,
+        edge_strength: float = 0.5,
+        invert: bool = False,
         sample_scale: float = 1.0,
     ) -> Text:
         """
@@ -46,6 +53,7 @@ class ImageProcessor:
         :param color: 是否使用 ANSI 颜色
         :param display_mode: 拉伸 / 填充 / 等比缩放
         :param render_mode: ascii / pixel
+        :param effect_mode: none / silhouette / edge / duotone / dither / posterize
         :param sample_scale: 仅影响采样密度，不改变最终字符占位
         :return: Rich Text 对象
         """
@@ -61,6 +69,11 @@ class ImageProcessor:
                 charset=charset,
                 display_mode=display_mode,
                 render_mode=render_mode,
+                effect_mode=effect_mode,
+                palette=palette,
+                threshold=threshold,
+                edge_strength=edge_strength,
+                invert=invert,
                 sample_scale=sample_scale,
             )
         except Exception as e:
@@ -76,9 +89,15 @@ class ImageProcessor:
         charset: str | None = None,
         display_mode: str = DEFAULT_IMAGE_DISPLAY_MODE,
         render_mode: str = DEFAULT_IMAGE_RENDER_MODE,
+        effect_mode: str = DEFAULT_IMAGE_EFFECT_MODE,
+        palette: object = None,
+        threshold: float | None = None,
+        edge_strength: float = 0.5,
+        invert: bool = False,
         sample_scale: float = 1.0,
     ) -> Text:
         render_mode = normalize_image_render_mode(render_mode)
+        effect_mode = normalize_image_effect_mode(effect_mode)
         width = max(1, int(width))
         aspect_ratio = img.shape[0] / max(1, img.shape[1])
         height_ratio = self._height_ratio_for_mode(render_mode)
@@ -104,6 +123,15 @@ class ImageProcessor:
                 height,
                 prefer_pixel_art=sample_scale < 1.0,
             )
+
+        prepared_img = self._apply_effect(
+            prepared_img,
+            effect_mode=effect_mode,
+            palette=palette,
+            threshold=threshold,
+            edge_strength=edge_strength,
+            invert=invert,
+        )
 
         if render_mode == "pixel":
             return self._to_pixel(prepared_img, color=color)
@@ -199,6 +227,240 @@ class ImageProcessor:
         else:
             interpolation = cv2.INTER_AREA
         return cv2.resize(img, (max(1, width), max(1, height)), interpolation=interpolation)
+
+    def _apply_effect(
+        self,
+        img: np.ndarray,
+        *,
+        effect_mode: str,
+        palette: object,
+        threshold: float | None,
+        edge_strength: float,
+        invert: bool,
+    ) -> np.ndarray:
+        if effect_mode == "none":
+            return img
+
+        colors = self._resolve_palette(palette)
+        if effect_mode == "silhouette":
+            return self._effect_silhouette(
+                img,
+                foreground=colors["accent"],
+                background=colors["background"],
+                threshold=threshold,
+                invert=invert,
+            )
+        if effect_mode == "edge":
+            return self._effect_edge(
+                img,
+                foreground=colors["accent"],
+                background=colors["background"],
+                edge_strength=edge_strength,
+                invert=invert,
+            )
+        if effect_mode == "duotone":
+            return self._effect_duotone(
+                img,
+                low=colors["background"],
+                high=colors["accent"],
+                invert=invert,
+            )
+        if effect_mode == "dither":
+            return self._effect_dither(
+                img,
+                low=colors["background"],
+                high=colors["accent"],
+                invert=invert,
+            )
+        if effect_mode == "posterize":
+            return self._effect_posterize(img)
+        return img
+
+    def _effect_silhouette(
+        self,
+        img: np.ndarray,
+        *,
+        foreground: tuple[int, int, int],
+        background: tuple[int, int, int],
+        threshold: float | None,
+        invert: bool,
+    ) -> np.ndarray:
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        threshold_value = self._normalize_threshold(threshold, gray)
+        mask = gray <= threshold_value
+        if threshold is None:
+            dark_count = int(mask.sum())
+            light_count = int(mask.size - dark_count)
+            mask = mask if dark_count <= light_count else ~mask
+        if invert:
+            mask = ~mask
+
+        mask_u8 = mask.astype(np.uint8) * 255
+        kernel = np.ones((3, 3), np.uint8)
+        mask_u8 = cv2.morphologyEx(mask_u8, cv2.MORPH_CLOSE, kernel)
+        mask_u8 = cv2.morphologyEx(mask_u8, cv2.MORPH_OPEN, kernel)
+        return self._compose_two_color(mask_u8 > 0, foreground=foreground, background=background)
+
+    def _effect_edge(
+        self,
+        img: np.ndarray,
+        *,
+        foreground: tuple[int, int, int],
+        background: tuple[int, int, int],
+        edge_strength: float,
+        invert: bool,
+    ) -> np.ndarray:
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        strength = self._normalize_unit(edge_strength, 0.5)
+        low = int(24 + (1.0 - strength) * 72)
+        high = int(low * (2.2 + strength))
+        edges = cv2.Canny(gray, low, high)
+        if invert:
+            edges = 255 - edges
+        return self._compose_two_color(edges > 0, foreground=foreground, background=background)
+
+    def _effect_duotone(
+        self,
+        img: np.ndarray,
+        *,
+        low: tuple[int, int, int],
+        high: tuple[int, int, int],
+        invert: bool,
+    ) -> np.ndarray:
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
+        if invert:
+            gray = 1.0 - gray
+        low_arr = np.array(low, dtype=np.float32)
+        high_arr = np.array(high, dtype=np.float32)
+        mixed = low_arr + (high_arr - low_arr) * gray[:, :, None]
+        return np.clip(mixed, 0, 255).astype(np.uint8)
+
+    def _effect_dither(
+        self,
+        img: np.ndarray,
+        *,
+        low: tuple[int, int, int],
+        high: tuple[int, int, int],
+        invert: bool,
+    ) -> np.ndarray:
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
+        if invert:
+            gray = 1.0 - gray
+        bayer = (
+            np.array(
+                [
+                    [0, 8, 2, 10],
+                    [12, 4, 14, 6],
+                    [3, 11, 1, 9],
+                    [15, 7, 13, 5],
+                ],
+                dtype=np.float32,
+            )
+            + 0.5
+        ) / 16.0
+        threshold_map = np.tile(
+            bayer,
+            (
+                int(np.ceil(gray.shape[0] / 4)),
+                int(np.ceil(gray.shape[1] / 4)),
+            ),
+        )[: gray.shape[0], : gray.shape[1]]
+        return self._compose_two_color(gray >= threshold_map, foreground=high, background=low)
+
+    def _effect_posterize(self, img: np.ndarray) -> np.ndarray:
+        levels = 4
+        scaled = np.floor(img.astype(np.float32) / 256.0 * levels)
+        scaled = np.clip(scaled, 0, levels - 1)
+        return np.clip((scaled / (levels - 1)) * 255.0, 0, 255).astype(np.uint8)
+
+    def _compose_two_color(
+        self,
+        mask: np.ndarray,
+        *,
+        foreground: tuple[int, int, int],
+        background: tuple[int, int, int],
+    ) -> np.ndarray:
+        result = np.zeros((mask.shape[0], mask.shape[1], 3), dtype=np.uint8)
+        result[:, :] = np.array(background, dtype=np.uint8)
+        result[mask] = np.array(foreground, dtype=np.uint8)
+        return result
+
+    def _normalize_threshold(self, threshold: float | None, gray: np.ndarray) -> int:
+        if threshold is None:
+            value, _ = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            return int(value)
+        try:
+            value = float(threshold)
+        except (TypeError, ValueError):
+            value = 128.0
+        if 0.0 <= value <= 1.0:
+            value *= 255.0
+        return int(max(0, min(255, value)))
+
+    def _normalize_unit(self, value: float, fallback: float) -> float:
+        try:
+            normalized = float(value)
+        except (TypeError, ValueError):
+            normalized = fallback
+        return max(0.0, min(1.0, normalized))
+
+    def _resolve_palette(self, palette: object) -> dict[str, tuple[int, int, int]]:
+        default = {
+            "background": (0, 0, 0),
+            "primary": (0, 255, 65),
+            "accent": (255, 215, 0),
+        }
+        if isinstance(palette, dict):
+            return {
+                "background": self._parse_color(
+                    palette.get("background") or palette.get("low") or palette.get("surface"),
+                    default["background"],
+                ),
+                "primary": self._parse_color(
+                    palette.get("primary") or palette.get("foreground"),
+                    default["primary"],
+                ),
+                "accent": self._parse_color(
+                    palette.get("accent") or palette.get("high") or palette.get("foreground"),
+                    default["accent"],
+                ),
+            }
+        if isinstance(palette, (list, tuple)) and len(palette) >= 2:
+            return {
+                "background": self._parse_color(palette[0], default["background"]),
+                "primary": self._parse_color(palette[1], default["primary"]),
+                "accent": self._parse_color(palette[-1], default["accent"]),
+            }
+        return default
+
+    def _parse_color(
+        self,
+        value: object,
+        fallback: tuple[int, int, int],
+    ) -> tuple[int, int, int]:
+        if isinstance(value, (list, tuple)) and len(value) >= 3:
+            try:
+                return tuple(max(0, min(255, int(channel))) for channel in value[:3])
+            except (TypeError, ValueError):
+                return fallback
+        text = str(value or "").strip()
+        if not text:
+            return fallback
+        if text.startswith("#"):
+            text = text[1:]
+        if len(text) == 3:
+            text = "".join(char * 2 for char in text)
+        if len(text) == 6:
+            try:
+                return (
+                    int(text[0:2], 16),
+                    int(text[2:4], 16),
+                    int(text[4:6], 16),
+                )
+            except ValueError:
+                return fallback
+        return fallback
 
     def _to_ascii(self, img: np.ndarray, color: bool = True, charset: str = None) -> Text:
         """将图像数组转换为 ASCII 文本"""
