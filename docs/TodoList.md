@@ -106,7 +106,7 @@
     - [x] 模板默认绑定字体预设，可在设置中手动覆盖
 - [ ] **全局缩放参数**
     - [x] 增加 `global_scale` 设置（影响字符像素密度/图像像素化程度）
-    - [~] 图像/GIF 渲染使用缩放参数重采样
+    - [x] 图像/GIF 渲染使用缩放参数重采样
     - [~] 编辑器提供缩放预览与快捷切换
 - [ ] **组件编辑器优化**
     - [~] 组件库分组与搜索（监控/媒体/装饰/信息）
@@ -401,21 +401,22 @@
 - [x] 完成当前项目视觉/架构 review，结论：主线方案 A 成立，但现有观感仍受“平铺组件面板 + 文本内容”模型限制。
 - [x] 新增路线文档：`docs/视觉升级Review与路线图.md`
 - [x] 明确下一阶段核心方向：将“字符像素画布、位图处理、轮廓剪影、装饰图层”升级为一等能力，而不是单纯继续堆模板。
-- [~] Textual UI V3：点阵图像管线增强
+- [x] Textual UI V3：点阵图像管线增强
   - [x] `ImageProcessor` 拆出基础效果处理流水线，旧 `ascii / pixel` 调用保持兼容。
   - [x] 新增 `silhouette / edge / duotone / dither / posterize` 等图片效果模式。
   - [x] 图片组件与编辑器接入 threshold、edge strength、invert、palette 等参数。
   - [x] 增加图片处理缓存，避免 resize/刷新时重复计算。
-  - [ ] GIF 帧并入同一套图片渲染链。
+  - [x] GIF 帧并入同一套图片渲染链。
 - [x] Textual UI V3：图形/装饰组件（首版）
   - [x] 新增 `DotMatrixArtWidget`，用于用户图片、剪影、logo 的点阵化主视觉。
   - [x] 新增 `BackdropPatternWidget`，用于背景点阵、扫描线、低对比网格。
   - [x] 新增 `HudDecorWidget`，用于角标、准星、标尺、断裂线框等 HUD 装饰。
   - [x] 新增 `Silhouette Deck V3` 模板验证“点阵主视觉 + HUD 装饰”方向。
 - [~] Textual UI V3：布局表现力升级
-  - [ ] 模板数据区分 `background / decoration / data` 组件用途。
+  - [x] 模板数据区分 `background / decoration / data` 组件用途。
   - [x] 短期“大跨度背景组件”方案已用 `BackdropPatternWidget` 首版验证。
-  - [ ] 评估中长期 `stage + layers` 或统一 cell buffer 合成器，以支持重叠、透明语义与视觉叠层。
+  - [x] `stage + layers` 首版：主显示页已拆为 `background / decoration / data` 三层 Textual Grid，允许跨层重叠。
+  - [ ] 评估中长期统一 cell buffer 合成器，以支持更精细的透明语义、逐字符遮罩与 blend。
 
 ## 2026-06-10 Textual UI V3 阶段 1（点阵图片与图形组件）
 - [x] 提交 `97a9702 docs: add visual upgrade roadmap`：记录视觉升级 review 与路线。
@@ -426,3 +427,16 @@
 - [x] 回归测试：
   - [x] `venv\Scripts\python.exe -m py_compile src\components\dotart.py src\components\backdrop.py src\components\hud.py src\components\__init__.py src\core\layout_config.py src\core\presets.py src\ui\editor.py`
   - [x] `venv\Scripts\python.exe -m unittest tests.test_image_processor tests.test_layout_config`
+
+## 2026-06-10 Textual UI V3 阶段 2（GIF 与分层布局）
+- [x] 提交 `4f6dc32 feat: render gif frames through image pipeline`：GIF 帧读取、帧时长与播放缓存接入 `ImageWidget`，并复用静态图片的渲染/效果/缩放管线。
+- [x] 提交 `cf3e6fe feat: add layered display grids`：主显示页新增 `background_grid / decoration_grid / main_grid` 三层 Stage，布局清洗和自动摆放改为同层避让、跨层可重叠。
+- [x] 提交 `83499a2 feat: expose component layers in editor`：编辑器新增 `Layer` 选择器，新建组件写入默认层，位置冲突校验仅检查同层。
+- [x] 模板与文档收口：
+  - [x] `Silhouette Deck V3` 显式声明 `component_layers`。
+  - [x] `docs/自定义界面说明.md` 补充 GIF 共用图片管线与 Layer 使用说明。
+  - [x] `docs/观察但未处理的问题.md` 更新已解决项与剩余边界。
+- [x] 回归测试：
+  - [x] `venv\Scripts\python.exe -m compileall -q src`
+  - [x] `$env:PYTHONPATH='src'; venv\Scripts\python.exe -m unittest discover tests`
+  - [x] Textual `run_test` smoke：确认 `#display_stage / #background_grid / #decoration_grid / #main_grid` 和编辑器 `#prop_layer` 能挂载。

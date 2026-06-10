@@ -136,6 +136,8 @@ class LayoutConfigTest(unittest.TestCase):
     def test_silhouette_deck_v3_layout_contains_dot_art_defaults(self) -> None:
         template = get_template("silhouette_deck_v3")
         self.assertIsNotNone(template)
+        self.assertEqual(template["component_layers"]["p_backdrop"], "background")
+        self.assertEqual(template["component_layers"]["p_hud"], "decoration")
 
         layout = build_default_layout(template)
         dot_art = next(

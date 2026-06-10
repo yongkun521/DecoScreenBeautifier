@@ -865,6 +865,14 @@ TEMPLATE_PRESETS: List[Dict[str, object]] = [
             "p_clock": "variant-hero",
             "p_badge": "variant-corner",
         },
+        "component_layers": {
+            "p_backdrop": "background",
+            "p_hud": "decoration",
+            "p_dot_art": "data",
+            "p_network": "data",
+            "p_clock": "data",
+            "p_badge": "data",
+        },
     },
 ]
 
