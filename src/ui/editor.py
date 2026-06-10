@@ -17,6 +17,7 @@ from core.layout_config import (
     DEFAULT_IMAGE_DISPLAY_MODE,
     DEFAULT_IMAGE_INVERT,
     DEFAULT_IMAGE_RENDER_MODE,
+    IMAGE_COMPONENT_TYPES,
     add_manual_empty_row,
     build_default_layout,
     cells_for_pos,
@@ -62,6 +63,9 @@ COMPONENT_TOOLS: List[ComponentTool] = [
     ComponentTool("image_poster", "Image - Poster", "ImageWidget", "p_image", "variant-compact"),
     ComponentTool("image_matrix", "Image - Matrix", "ImageWidget", "p_image", "variant-slim"),
     ComponentTool("image_hero", "Image - Hero", "ImageWidget", "p_image", "variant-hero"),
+    ComponentTool("dot_art", "Dot Matrix Art", "DotMatrixArtWidget", "p_dot_art", "variant-hero", default_span=(4, 2)),
+    ComponentTool("backdrop", "Backdrop Pattern", "BackdropPatternWidget", "p_backdrop", "variant-rail", default_span=(6, 1)),
+    ComponentTool("hud_decor", "HUD Decor", "HudDecorWidget", "p_hud", "variant-corner", default_span=(4, 1)),
     ComponentTool("ticker", "Info Ticker", "InfoTicker", "p_ticker", "variant-banner", default_span=(4, 1)),
     ComponentTool("ticker_ribbon", "Info Ticker - Ribbon", "InfoTicker", "p_ticker", "variant-ribbon", default_span=(4, 1)),
     ComponentTool("badge", "Status Badge", "StatusBadge", "p_badge", "variant-compact", default_span=(2, 1)),
@@ -523,7 +527,7 @@ class EditorScreen(Screen):
         self._set_input_value("#prop_col_span", str(col_span))
         self._set_input_value("#prop_row_span", str(row_span))
         self._set_select_value("#prop_variant", str(component.get("variant") or ""))
-        if component.get("type") == "ImageWidget":
+        if self._is_image_component_type(component.get("type")):
             self._set_select_value(
                 "#prop_image_mode",
                 normalize_image_display_mode(component.get("image_display_mode")),
@@ -663,7 +667,7 @@ class EditorScreen(Screen):
             "variant": tool.variant,
             "pos": [col, row, col_span, row_span],
         }
-        if tool.type_name == "ImageWidget":
+        if self._is_image_component_type(tool.type_name):
             component["image_path"] = ""
             component["image_display_mode"] = DEFAULT_IMAGE_DISPLAY_MODE
             component["image_render_mode"] = DEFAULT_IMAGE_RENDER_MODE
@@ -750,7 +754,7 @@ class EditorScreen(Screen):
         else:
             component.pop("variant", None)
         image_path = self._get_input_value("#prop_image_path")
-        if component.get("type") == "ImageWidget":
+        if self._is_image_component_type(component.get("type")):
             component["image_display_mode"] = normalize_image_display_mode(
                 self._get_select_value("#prop_image_mode")
             )
@@ -977,7 +981,10 @@ class EditorScreen(Screen):
 
     def _selected_component_is_image(self) -> bool:
         component = self._get_component(self.selected_component_id or "")
-        return bool(component and component.get("type") == "ImageWidget")
+        return bool(component and self._is_image_component_type(component.get("type")))
+
+    def _is_image_component_type(self, type_name: object) -> bool:
+        return str(type_name or "").strip() in IMAGE_COMPONENT_TYPES
 
     def _safe_int(self, value: object, fallback: Optional[int]) -> Optional[int]:
         if value is None:

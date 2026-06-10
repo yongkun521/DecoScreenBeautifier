@@ -18,6 +18,7 @@ IMAGE_EFFECT_MODES = ("none", "silhouette", "edge", "duotone", "dither", "poster
 DEFAULT_MANUAL_ROWS = 0
 
 DEFAULT_ACTIVE_COMPONENTS = ["p_hardware", "p_network", "p_clock", "p_audio", "p_image"]
+IMAGE_COMPONENT_TYPES = {"ImageWidget", "DotMatrixArtWidget"}
 
 BASE_COMPONENTS: Dict[str, str] = {
     "p_hardware": "HardwareMonitor",
@@ -25,6 +26,9 @@ BASE_COMPONENTS: Dict[str, str] = {
     "p_clock": "ClockWidget",
     "p_audio": "AudioVisualizer",
     "p_image": "ImageWidget",
+    "p_dot_art": "DotMatrixArtWidget",
+    "p_backdrop": "BackdropPatternWidget",
+    "p_hud": "HudDecorWidget",
     "p_ticker": "InfoTicker",
     "p_badge": "StatusBadge",
     "p_stream": "DataStreamWidget",
@@ -53,6 +57,9 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_ticker": (12, 1),
         "p_badge": (3, 1),
         "p_stream": (4, 2),
+        "p_dot_art": (6, 2),
+        "p_backdrop": (12, 1),
+        "p_hud": (6, 1),
     },
     "layout-ultrawide-plus": {
         "p_hardware": (4, 2),
@@ -63,6 +70,9 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_ticker": (9, 1),
         "p_badge": (3, 1),
         "p_stream": (6, 1),
+        "p_dot_art": (6, 2),
+        "p_backdrop": (12, 1),
+        "p_hud": (6, 1),
     },
     "layout-wide": {
         "p_hardware": (4, 2),
@@ -73,6 +83,9 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_ticker": (8, 1),
         "p_badge": (2, 1),
         "p_stream": (4, 2),
+        "p_dot_art": (4, 2),
+        "p_backdrop": (8, 1),
+        "p_hud": (4, 1),
     },
     "layout-wide-plus": {
         "p_hardware": (4, 2),
@@ -83,6 +96,9 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_ticker": (8, 1),
         "p_badge": (2, 1),
         "p_stream": (8, 1),
+        "p_dot_art": (4, 2),
+        "p_backdrop": (8, 1),
+        "p_hud": (4, 1),
     },
     "layout-portrait": {
         "p_hardware": (4, 2),
@@ -93,6 +109,9 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_ticker": (4, 1),
         "p_badge": (4, 1),
         "p_stream": (4, 2),
+        "p_dot_art": (4, 3),
+        "p_backdrop": (4, 1),
+        "p_hud": (4, 1),
     },
     "layout-portrait-plus": {
         "p_hardware": (4, 3),
@@ -103,6 +122,9 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_ticker": (4, 1),
         "p_badge": (4, 1),
         "p_stream": (4, 4),
+        "p_dot_art": (4, 3),
+        "p_backdrop": (4, 1),
+        "p_hud": (4, 1),
     },
     "layout-tall": {
         "p_hardware": (3, 3),
@@ -113,6 +135,9 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_ticker": (3, 1),
         "p_badge": (3, 1),
         "p_stream": (3, 3),
+        "p_dot_art": (3, 3),
+        "p_backdrop": (3, 1),
+        "p_hud": (3, 1),
     },
     "layout-square": {
         "p_hardware": (3, 2),
@@ -123,6 +148,9 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_ticker": (6, 1),
         "p_badge": (6, 1),
         "p_stream": (6, 2),
+        "p_dot_art": (6, 3),
+        "p_backdrop": (6, 1),
+        "p_hud": (6, 1),
     },
     "layout-strip": {
         "p_hardware": (3, 1),
@@ -133,6 +161,9 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_ticker": (12, 1),
         "p_badge": (3, 1),
         "p_stream": (6, 1),
+        "p_dot_art": (6, 1),
+        "p_backdrop": (12, 1),
+        "p_hud": (6, 1),
     },
     "layout-strip-plus": {
         "p_hardware": (4, 1),
@@ -143,6 +174,9 @@ DEFAULT_SPANS: Dict[str, Dict[str, Tuple[int, int]]] = {
         "p_ticker": (9, 1),
         "p_badge": (3, 1),
         "p_stream": (12, 1),
+        "p_dot_art": (6, 1),
+        "p_backdrop": (12, 1),
+        "p_hud": (6, 1),
     },
 }
 
@@ -245,7 +279,7 @@ def build_default_layout(template: Optional[dict]) -> Dict[str, object]:
             "variant": variant_map.get(str(base_id)),
             "pos": [0, 0, col_span, row_span],
         }
-        if type_name == "ImageWidget":
+        if type_name in IMAGE_COMPONENT_TYPES:
             component["image_path"] = DEFAULT_IMAGE_PATH
             component["image_display_mode"] = template_image_display_mode
             component["image_render_mode"] = template_image_render_mode
@@ -328,7 +362,7 @@ def sanitize_layout_data(layout_data: object, template: Optional[dict]) -> Dict[
         component["id"] = component_id
         component["type"] = type_name
         component["pos"] = [placed[0], placed[1], placed[2], placed[3]]
-        if type_name == "ImageWidget":
+        if type_name in IMAGE_COMPONENT_TYPES:
             component["image_display_mode"] = normalize_image_display_mode(
                 component.get("image_display_mode")
             )

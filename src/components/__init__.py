@@ -4,7 +4,10 @@ from .base import BaseWidget
 from .hardware import HardwareMonitor
 from .clock import ClockWidget
 from .audio import AudioVisualizer
+from .backdrop import BackdropPatternWidget
 from .image import ImageWidget
+from .dotart import DotMatrixArtWidget
+from .hud import HudDecorWidget
 from .network import NetworkMonitor
 from .status import StatusBadge
 from .stream import DataStreamWidget
@@ -30,6 +33,9 @@ COMPONENT_REGISTRY = {
     "ClockWidget": ClockWidget,
     "AudioVisualizer": AudioVisualizer,
     "ImageWidget": ImageWidget,
+    "DotMatrixArtWidget": DotMatrixArtWidget,
+    "BackdropPatternWidget": BackdropPatternWidget,
+    "HudDecorWidget": HudDecorWidget,
     "NetworkMonitor": NetworkMonitor,
     "InfoTicker": InfoTicker,
     "StatusBadge": StatusBadge,
@@ -47,7 +53,7 @@ def create_component_widget(
         raise KeyError(type_name)
 
     kwargs = {"id": component_id}
-    if component_cls is ImageWidget:
+    if issubclass(component_cls, ImageWidget):
         image_path = ""
         image_display_mode = DEFAULT_IMAGE_DISPLAY_MODE
         image_render_mode = DEFAULT_IMAGE_RENDER_MODE
@@ -90,6 +96,9 @@ __all__ = [
     "ClockWidget",
     "AudioVisualizer",
     "ImageWidget",
+    "DotMatrixArtWidget",
+    "BackdropPatternWidget",
+    "HudDecorWidget",
     "NetworkMonitor",
     "InfoTicker",
     "StatusBadge",

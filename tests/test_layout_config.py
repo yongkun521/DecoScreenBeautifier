@@ -108,3 +108,38 @@ class LayoutConfigTest(unittest.TestCase):
         self.assertEqual(widget.image_effect_threshold, 0.25)
         self.assertEqual(widget.image_edge_strength, 0.9)
         self.assertTrue(widget.image_invert)
+
+    def test_create_v3_graphic_components(self) -> None:
+        dot_art = create_component_widget(
+            "DotMatrixArtWidget",
+            "p_dot_art",
+            {
+                "image_path": "assets/logo.png",
+                "image_render_mode": "pixel",
+                "image_effect_mode": "silhouette",
+            },
+        )
+        backdrop = create_component_widget("BackdropPatternWidget", "p_backdrop")
+        hud = create_component_widget("HudDecorWidget", "p_hud")
+
+        self.assertEqual(dot_art.image_render_mode, "pixel")
+        self.assertEqual(dot_art.image_effect_mode, "silhouette")
+        self.assertEqual(backdrop.id, "p_backdrop")
+        self.assertEqual(hud.id, "p_hud")
+
+    def test_silhouette_deck_v3_layout_contains_dot_art_defaults(self) -> None:
+        template = get_template("silhouette_deck_v3")
+        self.assertIsNotNone(template)
+
+        layout = build_default_layout(template)
+        dot_art = next(
+            component for component in layout["components"] if component["type"] == "DotMatrixArtWidget"
+        )
+        component_types = {component["type"] for component in layout["components"]}
+
+        self.assertIn("BackdropPatternWidget", component_types)
+        self.assertIn("HudDecorWidget", component_types)
+        self.assertEqual(dot_art["image_render_mode"], "pixel")
+        self.assertEqual(dot_art["image_display_mode"], "fill")
+        self.assertEqual(dot_art["image_effect_mode"], "silhouette")
+        self.assertEqual(dot_art["variant"], "variant-hero")

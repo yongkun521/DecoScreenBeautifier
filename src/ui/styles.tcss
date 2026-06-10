@@ -312,6 +312,24 @@ Screen.theme-deck-strip #main_grid {
     border: solid #5EE7FF;
 }
 
+#p_dot_art {
+    column-span: 6;
+    row-span: 2;
+    border: solid #FFD700;
+}
+
+#p_backdrop {
+    column-span: 6;
+    row-span: 1;
+    border: solid #335555;
+}
+
+#p_hud {
+    column-span: 6;
+    row-span: 1;
+    border: solid #00FFFF;
+}
+
 .component-hardware {
     border: heavy #00FF41;
 }
@@ -342,6 +360,18 @@ Screen.theme-deck-strip #main_grid {
 
 .component-stream {
     border: solid #5EE7FF;
+}
+
+.component-dot_art {
+    border: solid #FFD700;
+}
+
+.component-backdrop {
+    border: solid #335555;
+}
+
+.component-hud {
+    border: solid #00FFFF;
 }
 
 #p_boot_hint {
